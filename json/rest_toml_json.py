@@ -33,6 +33,7 @@ parser = argparse.ArgumentParser(description="Process HTTP Rest request for JSON
 
 parser.add_argument("toml")
 parser.add_argument("--adapter")
+parser.add_argument("--show-request", action='store_true')
 parser.add_argument("--show-header", action='store_true')
 parser.add_argument("--pipe", action='store_true')
 parser.add_argument("--arg", action='append')
@@ -41,6 +42,7 @@ args = parser.parse_args()
 
 arg_toml = args.toml
 flag_adapter = args.adapter
+flag_show_request = args.show_request
 flag_show_header = args.show_header
 flag_pipe = args.pipe
 flag_args = args.arg
@@ -66,6 +68,13 @@ def process_flag_args() -> dict:
                 value = bool(int(arg[1]))
             arg_dict[name.split(":", maxsplit=2)[0]] = value
     return arg_dict
+
+
+def arg_pass() -> list:
+    args = []
+    for arg in flag_args:
+        args += ["--arg", str(arg)]
+    return args
 
 
 adapter_data = {
@@ -233,10 +242,11 @@ piper = Piper(["arg"], {"arg": arg_dict})
 if toml_data.pipe:
     all_pipe_data = {}
     try:
+        pass_args = arg_pass()
         for key, pipe in toml_data.pipe.items():
             pipe_data = subprocess.run([
                 pipe, "--pipe"
-            ], check=True, capture_output=True).stdout.decode('utf-8').strip()
+            ] + pass_args, check=True, capture_output=True).stdout.decode('utf-8').strip()
             all_pipe_data[key] = json.loads(pipe_data)
         piper = Piper(["arg", "pipe"], {"arg": arg_dict, "pipe": all_pipe_data})
     except subprocess.CalledProcessError as e:
@@ -292,10 +302,16 @@ if flag_pipe:
     }, sys.stdout, indent="\t")
     exit(0)
 
+if flag_show_request:
+    print("-- Request Headers --")
+    pprint(dict(res.request.headers), expand_all=True)
+    print("-- Request Payload --")
+    print_json(res.request.body)
+
 print(f"Status: {res.status_code}")
 print(f"Elapsed: {res.elapsed}")
 if flag_show_header:
     print("-- Response Headers --")
-    pprint(res.headers, expand_all=True)
+    pprint(dict(res.headers), expand_all=True)
 print("-- Response Body --")
 print_json(res.text)
