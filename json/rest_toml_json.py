@@ -31,9 +31,10 @@ def error_and_exit(error_name: str, error_message: str):
 parser = argparse.ArgumentParser(description="Process HTTP Rest request for JSON")
 
 parser.add_argument("toml")
-parser.add_argument("--adapter", action='store_true')
+parser.add_argument("--adapter")
 parser.add_argument("--show-header", action='store_true')
 parser.add_argument("--pipe", action='store_true')
+parser.add_argument("--arg", action='append')
 
 args = parser.parse_args()
 
@@ -41,6 +42,19 @@ arg_toml = args.toml
 flag_adapter = args.adapter
 flag_show_header = args.show_header
 flag_pipe = args.pipe
+flag_args = args.arg
+
+
+def process_flag_args() -> dict:
+    arg_dict = {}
+    if not flag_args:
+        return arg_dict
+    for arg in flag_args:
+        arg = str(arg).split("=", maxsplit=2)
+        if len(arg) == 2:
+            arg_dict[arg[0]] = arg[1]
+    return arg_dict
+
 
 adapter_data = {
     "url": "https://jsonplaceholder.typicode.com/",
@@ -170,10 +184,13 @@ class Piper:
                     self.__switch[item] = True
         self.__data = data
 
-    def process(self, switch: str, user_data: dict) -> dict:
+    def process(self, switch: str, user_data: dict | list) -> dict | list | None:
         if not self.__switch.get(switch, False):
             return user_data
-        return self.__process_dict(user_data)
+        if type(user_data) is dict:
+            return self.__process_dict(user_data)
+        elif type(user_data) is list:
+            return self.__process_list(user_data)
 
     def __process_list(self, user_data: list) -> list:
         new_data: list = []
@@ -199,8 +216,8 @@ class Piper:
                     user_data[key] = self.__process_list(value)
         return user_data
 
-
-piper = Piper(["arg"], {"arg": {}})
+arg_dict = process_flag_args()
+piper = Piper(["arg"], {"arg": arg_dict})
 if toml_data.pipe:
     all_pipe_data = {}
     try:
@@ -209,16 +226,23 @@ if toml_data.pipe:
                 pipe, "--pipe"
             ], check=True, capture_output=True).stdout.decode('utf-8').strip()
             all_pipe_data[key] = json.loads(pipe_data)
-        piper = Piper(["arg", "pipe"], {"arg": {}, "pipe": all_pipe_data})
+        piper = Piper(["arg", "pipe"], {"arg": arg_dict, "pipe": all_pipe_data})
     except subprocess.CalledProcessError as e:
         error_and_exit("PIPE_ERROR", e.__str__())
     except json.JSONDecodeError as e:
         error_and_exit("JSON_PIPE_ERROR", e.__str__())
 
 
+def process_endpoint_arg() -> str:
+    endpoint = toml_data.http.endpoint
+    for key, value in arg_dict.items():
+        endpoint = endpoint.replace("{"+key+"}", value)
+    return endpoint
+
+
 req = requests.Request(
     method=toml_data.http.method,
-    url=adapter_data.url + toml_data.http.endpoint,
+    url=adapter_data.url + process_endpoint_arg(),
     headers=piper.process("arg", toml_data.http.headers) | adapter_data.headers,
     params=piper.process("arg", toml_data.http.params),
     cookies=piper.process("arg", toml_data.http.cookies),
@@ -231,9 +255,9 @@ prepared_req = req.prepare()
 if toml_data.http.method not in ["GET", "HEAD"]:
     if type(toml_data.http.payload) is str:
         json_payload = json.loads(toml_data.http.payload)
-        prepared_req.body = json.dumps(json_payload)
+        prepared_req.body = json.dumps(piper.process("arg", json_payload))
     else:
-        prepared_req.body = json.dumps(toml_data.http.payload)
+        prepared_req.body = json.dumps(piper.process(toml_data.http.payload))
 
 if not adapter_data.verify:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
