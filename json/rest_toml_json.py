@@ -20,6 +20,7 @@ from typing import Self
 import requests
 import urllib3
 import dpath
+from rich import print_json
 from rich.pretty import pprint
 
 
@@ -286,4 +287,4 @@ if flag_show_header:
     print("-- Response Headers --")
     pprint(res.headers, expand_all=True)
 print("-- Response Body --")
-pprint(res.json(), expand_all=True)
+print_json(res.text)
