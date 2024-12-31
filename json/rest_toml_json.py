@@ -188,10 +188,6 @@ except TomlDataError as e:
 
 
 class Piper:
-    """
-    Process `json` from `stdin` pipe
-    """
-
     __switch: dict[str, bool]
     __data: dict
 
