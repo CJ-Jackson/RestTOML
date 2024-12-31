@@ -248,7 +248,7 @@ if toml_data.pipe:
 def process_endpoint_arg() -> str:
     endpoint = toml_data.http.endpoint
     for key, value in arg_dict.items():
-        endpoint = endpoint.replace("{"+key+"}", value)
+        endpoint = endpoint.replace("{"+key+"}", str(value))
     return endpoint
 
 
