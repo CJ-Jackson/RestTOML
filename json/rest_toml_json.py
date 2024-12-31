@@ -308,6 +308,7 @@ if flag_show_request:
     print("-- Request Payload --")
     print_json(res.request.body)
 
+print("-- Response --")
 print(f"Status: {res.status_code}")
 print(f"Elapsed: {res.elapsed}")
 if flag_show_header:
