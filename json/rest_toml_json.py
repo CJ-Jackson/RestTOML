@@ -53,7 +53,14 @@ def process_flag_args() -> dict:
     for arg in flag_args:
         arg = str(arg).split("=", maxsplit=2)
         if len(arg) == 2:
-            arg_dict[arg[0]] = arg[1]
+            if arg[0].endswith(":int"):
+                arg_dict[arg[0].removesuffix(":int")] = int(arg[1])
+            if arg[1].endswith(":float"):
+                arg_dict[arg[0].removesuffix(":float")] = float(arg[1])
+            if arg[1].endswith(":bool"):
+                arg_dict[arg[0].removesuffix(":bool")] = bool(int(arg[1]))
+            else:
+                arg_dict[arg[0]] = arg[1]
     return arg_dict
 
 
