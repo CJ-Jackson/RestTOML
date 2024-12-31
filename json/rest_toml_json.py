@@ -253,9 +253,20 @@ if toml_data.pipe:
 
 def process_endpoint_arg() -> str:
     endpoint = toml_data.http.endpoint
-    for key, value in arg_dict.items():
-        endpoint = endpoint.replace("{"+key+"}", str(value))
-    return endpoint
+
+    d_poss = [i for i in range(len(endpoint)) if endpoint.startswith("#d!", i)]
+    d_poss += [i for i in range(len(endpoint)) if endpoint.startswith("//", i)]
+    d_poss.sort()
+
+    endpoint_split = []
+    previous_pos = 0
+    for pos in d_poss:
+        endpoint_split.append(endpoint[previous_pos:pos].strip("/"))
+        previous_pos = pos
+    endpoint_split.append(endpoint[previous_pos:].strip("/"))
+
+    endpoint = piper.process("arg", endpoint_split)
+    return "/".join(str(v) for v in endpoint).rstrip("/")
 
 
 req = requests.Request(
