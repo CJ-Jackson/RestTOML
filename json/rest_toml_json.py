@@ -3,18 +3,21 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #   "requests>=2.32.3",
-#   "rich>=13.9.4"
+#   "rich>=13.9.4",
+#   "dpath>=2.2.0"
 # ]
 # ///
 import argparse
 import json
 import os
+import subprocess
 import sys
 import tomllib
 from http import cookies
 
 import requests
 import urllib3
+import dpath
 from dataclasses import dataclass, field
 from typing import Self
 from rich.pretty import pprint
@@ -137,12 +140,77 @@ except HttpDataError as e:
 except TomlDataError as e:
     error_and_exit("TOML_DATA_ERROR", e.__str__())
 
+
+class Piper:
+    """
+    Process `json` from `stdin` pipe
+    """
+
+    __switch: dict[str, bool]
+    __data: dict
+
+    def __init__(self, switch: dict[str, bool] | list[str], data: dict):
+        match switch:
+            case dict():
+                self.__switch = switch
+            case list():
+                self.__switch = {}
+                for item in switch:
+                    self.__switch[item] = True
+        self.__data = data
+
+    def process(self, switch: str, user_data: dict) -> dict:
+        if not self.__switch.get(switch, False):
+            return user_data
+        return self.__process_dict(user_data)
+
+    def __process_list(self, user_data: list) -> list:
+        new_data: list = []
+        for value in user_data:
+            match value:
+                case str() if len(value) > 3 and value[:3] == "#d!":
+                    value = dpath.get(self.__data, value[3:])
+                case dict():
+                    value = self.__process_dict(value)
+                case list():
+                    value = self.__process_list(value)
+            new_data.append(value)
+        return new_data
+
+    def __process_dict(self, user_data: dict) -> dict:
+        for key, value in user_data.items():
+            match value:
+                case str() if len(value) > 3 and value[:3] == "#d!":
+                    user_data[key] = dpath.get(self.__data, value[3:])
+                case dict():
+                    user_data[key] = self.__process_dict(value)
+                case list():
+                    user_data[key] = self.__process_list(value)
+        return user_data
+
+
+piper = Piper(["arg"], {"arg": {}})
+if toml_data.pipe:
+    all_pipe_data = {}
+    try:
+        for key, pipe in toml_data.pipe.items():
+            pipe_data = subprocess.run([
+                pipe, "--pipe"
+            ], check=True, capture_output=True).stdout.decode('utf-8').strip()
+            all_pipe_data[key] = json.loads(pipe_data)
+        piper = Piper(["arg", "pipe"], {"arg": {}, "pipe": all_pipe_data})
+    except subprocess.CalledProcessError as e:
+        error_and_exit("PIPE_ERROR", e.__str__())
+    except json.JSONDecodeError as e:
+        error_and_exit("JSON_PIPE_ERROR", e.__str__())
+
+
 req = requests.Request(
     method=toml_data.http.method,
     url=adapter_data.url + toml_data.http.endpoint,
-    headers=toml_data.http.headers | adapter_data.headers,
-    params=toml_data.http.params,
-    cookies=toml_data.http.cookies,
+    headers=piper.process("arg", toml_data.http.headers) | adapter_data.headers,
+    params=piper.process("arg", toml_data.http.params),
+    cookies=piper.process("arg", toml_data.http.cookies),
 )
 
 session = requests.Session()
@@ -151,7 +219,8 @@ prepared_req = req.prepare()
 
 if toml_data.http.method not in ["GET", "HEAD"]:
     if type(toml_data.http.payload) is str:
-        prepared_req.body = toml_data.http.payload
+        json_payload = json.loads(toml_data.http.payload)
+        prepared_req.body = json.dumps(json_payload)
     else:
         prepared_req.body = json.dumps(toml_data.http.payload)
 
