@@ -14,12 +14,12 @@ import subprocess
 import sys
 import tomllib
 from http import cookies
+from dataclasses import dataclass, field
+from typing import Self
 
 import requests
 import urllib3
 import dpath
-from dataclasses import dataclass, field
-from typing import Self
 from rich.pretty import pprint
 
 
