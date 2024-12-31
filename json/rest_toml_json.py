@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import os
 import sys
 import tomllib
 from dataclasses import dataclass, field
@@ -20,6 +21,39 @@ args = parser.parse_args()
 
 arg_toml = args.toml
 
+adapter_data = {
+    "url": "https://jsonplaceholder.typicode.com/",
+    "headers": {"X-TEST": "TEST"}
+}
+
+# TODO: Add adapter flag, for now we use embedded data.
+
+class AdapterDataError(Exception): pass
+
+
+@dataclass(frozen=True)
+class AdapterData():
+    url: str
+    headers: dict[str, str]
+
+    @classmethod
+    def create(cls, data: dict):
+        if "url" not in data:
+            raise AdapterDataError("Adapter must provide url")
+        url = data["url"]
+        if "headers" not in data:
+            raise AdapterDataError("Adapter must provide headers")
+        headers = data["headers"]
+        return cls(url=url, headers=headers)
+
+
+try:
+    adapter_data = AdapterData.create(adapter_data)
+except AdapterDataError as e:
+    error_and_exit("ADAPTER_DATA_ERROR", e.__str__())
+
+print(adapter_data)
+
 toml_data = None
 try:
     with open(arg_toml, "rb") as f:
@@ -31,6 +65,8 @@ except OSError as e:
 if not toml_data:
     exit(0)
 
+os.chdir(os.path.dirname(os.path.abspath(arg_toml)))
+
 class HttpDataError(Exception): pass
 
 
@@ -39,7 +75,7 @@ class HttpData():
     endpoint: str
     params: dict[str, str] = field(default_factory=dict[str, str])
     headers: dict[str, str] = field(default_factory=dict[str, str])
-    payload: dict[str, str] = field(default_factory=dict[str, str])
+    payload: dict[str, str]|str = field(default_factory=dict[str, str])
     method: str = "GET"
 
     @classmethod
