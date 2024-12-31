@@ -31,12 +31,14 @@ def error_and_exit(error_name: str, error_message: str):
 parser = argparse.ArgumentParser(description="Process HTTP Rest request for JSON")
 
 parser.add_argument("toml")
+parser.add_argument("--adapter", action='store_true')
 parser.add_argument("--show-header", action='store_true')
 parser.add_argument("--pipe", action='store_true')
 
 args = parser.parse_args()
 
 arg_toml = args.toml
+flag_adapter = args.adapter
 flag_show_header = args.show_header
 flag_pipe = args.pipe
 
@@ -46,7 +48,16 @@ adapter_data = {
     "verify": True,
 }
 
-# TODO: Add adapter flag, for now we use embedded data.
+if flag_adapter:
+    try:
+        adapter_data = subprocess.run([
+            os.path.expanduser(f"~/.config/resttoml/json/{flag_adapter}")
+        ], check=True, capture_output=True).stdout.decode('utf-8')
+        adapter_data = json.loads(adapter_data)
+    except subprocess.CalledProcessError as e:
+        error_and_exit("FLAG_ADAPTER_ERROR", e.__str__())
+    except json.JSONDecodeError as e:
+        error_and_exit("FLAG_ADAPTER_JSON_ERROR", e.__str__())
 
 class AdapterDataError(Exception): pass
 
@@ -246,6 +257,7 @@ if flag_pipe:
     exit(0)
 
 print(f"Status: {res.status_code}")
+print(f"Elapsed: {res.elapsed}")
 if flag_show_header:
     print("-- Response Headers --")
     pprint(res.headers, expand_all=True)
