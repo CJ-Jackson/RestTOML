@@ -59,7 +59,7 @@ def process_flag_args() -> dict:
 
 adapter_data = {
     "url": "https://jsonplaceholder.typicode.com/",
-    "headers": {"X-TEST": "TEST"},
+    "headers": {"Content-type": "application/json; charset=UTF-8"},
     "verify": True,
 }
 
@@ -258,7 +258,7 @@ if toml_data.http.method not in ["GET", "HEAD"]:
         json_payload = json.loads(toml_data.http.payload)
         prepared_req.body = json.dumps(piper.process("arg", json_payload))
     else:
-        prepared_req.body = json.dumps(piper.process(toml_data.http.payload))
+        prepared_req.body = json.dumps(piper.process("arg", toml_data.http.payload))
 
 if not adapter_data.verify:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
