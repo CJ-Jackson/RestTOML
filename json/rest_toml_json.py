@@ -255,9 +255,7 @@ if toml_data.pipe:
 def process_endpoint_arg() -> str:
     endpoint = toml_data.http.endpoint
 
-    d_poss = [i for i in range(len(endpoint)) if endpoint.startswith("#d!", i)]
-    d_poss += [i for i in range(len(endpoint)) if endpoint.startswith("//", i)]
-    d_poss.sort()
+    d_poss = [i for i in range(len(endpoint)) if endpoint.startswith("#d!", i) or endpoint.startswith("//", i)]
 
     endpoint_split = []
     previous_pos = 0
