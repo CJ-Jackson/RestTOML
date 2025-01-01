@@ -253,7 +253,7 @@ class Piper:
 
 
 arg_dict = process_flag_args()
-piper = Piper({"arg": arg_dict, "test": [0, 42, 0]})
+piper = Piper({"arg": arg_dict})
 if toml_data.pipe:
     all_pipe_data = {}
     try:
