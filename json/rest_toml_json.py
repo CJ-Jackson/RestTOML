@@ -3,8 +3,7 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #   "requests>=2.32.3",
-#   "rich>=13.9.4",
-#   "dpath>=2.2.0"
+#   "rich>=13.9.4"
 # ]
 # ///
 import argparse
@@ -15,11 +14,10 @@ import sys
 import tomllib
 from http import cookies
 from dataclasses import dataclass, field
-from typing import Self
+from typing import Self, MutableMapping
 
 import requests
 import urllib3
-import dpath
 from rich import print_json
 from rich.pretty import pprint
 
@@ -190,12 +188,25 @@ except TomlDataError as e:
     error_and_exit("TOML_DATA_ERROR", e.__str__())
 
 
+def _flatten_dict_gen(d, parent_key, sep):
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, MutableMapping):
+            yield from flatten_dict(v, new_key, sep=sep).items()
+        else:
+            yield new_key, v
+
+
+def flatten_dict(d: MutableMapping, parent_key: str = '', sep: str = '/'):
+    return dict(_flatten_dict_gen(d, parent_key, sep))
+
+
 class Piper:
     __switch: dict[str, bool]
     __data: dict
 
     def __init__(self, data: dict):
-        self.__data = data
+        self.__data = flatten_dict(data)
 
     def process(self, user_data: dict | list) -> dict | list | None:
         try:
@@ -214,7 +225,7 @@ class Piper:
         for value in user_data:
             match value:
                 case str() if str(value).startswith("#d!"):
-                    value = dpath.get(self.__data, value[3:])
+                    value = self.__data[str(value)[3:].strip('/')]
                 case dict():
                     value = self.__process_dict(value)
                 case list():
@@ -226,7 +237,7 @@ class Piper:
         for key, value in user_data.items():
             match value:
                 case str() if str(value).startswith("#d!"):
-                    user_data[key] = dpath.get(self.__data, value[3:])
+                    user_data[key] = self.__data[str(value)[3:].strip('/')]
                 case dict():
                     user_data[key] = self.__process_dict(value)
                 case list():
