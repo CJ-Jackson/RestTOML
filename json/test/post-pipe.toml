@@ -7,6 +7,6 @@ endpoint = "/posts"
 method = "post"
 
 [http.payload]
-title = "#d!/arg/title"
-body = "#d!/pipe/todo/body/title"
+title = "#d!arg/title"
+body = "#d!pipe/todo/body/title"
 userId = 1

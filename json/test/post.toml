@@ -4,6 +4,6 @@ endpoint = "/posts"
 method = "post"
 
 [http.payload]
-title = "#d!/arg/title"
-body = "#d!/arg/body"
+title = "#d!arg/title"
+body = "#d!arg/body"
 userId = 1
