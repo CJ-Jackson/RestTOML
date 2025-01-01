@@ -94,6 +94,7 @@ if flag_adapter:
     except json.JSONDecodeError as e:
         error_and_exit("FLAG_ADAPTER_JSON_ERROR", e.__str__())
 
+
 class AdapterDataError(Exception): pass
 
 
@@ -132,6 +133,7 @@ if not toml_data:
 
 os.chdir(os.path.dirname(os.path.abspath(arg_toml)))
 
+
 class HttpDataError(Exception): pass
 
 
@@ -140,8 +142,8 @@ class HttpData():
     endpoint: str
     params: dict[str, str] = field(default_factory=dict[str, str])
     headers: dict[str, str] = field(default_factory=dict[str, str])
-    cookies: dict[str, str] =  field(default_factory=dict[str, str])
-    payload: dict[str, str]|str = field(default_factory=dict[str, str])
+    cookies: dict[str, str] = field(default_factory=dict[str, str])
+    payload: dict[str, str] | str = field(default_factory=dict[str, str])
     method: str = "GET"
 
     @classmethod
@@ -166,7 +168,7 @@ class TomlDataError(Exception): pass
 @dataclass(frozen=True)
 class TomlData():
     http: HttpData
-    pipe: dict[str, str]|None = None
+    pipe: dict[str, str] | None = None
 
     @classmethod
     def create(cls, data: dict) -> Self:
@@ -178,6 +180,7 @@ class TomlData():
             http=http,
             pipe=data.get("pipe", None)
         )
+
 
 try:
     toml_data = TomlData.create(toml_data)
@@ -191,29 +194,26 @@ class Piper:
     __switch: dict[str, bool]
     __data: dict
 
-    def __init__(self, switch: dict[str, bool] | list[str], data: dict):
-        match switch:
-            case dict():
-                self.__switch = switch
-            case list():
-                self.__switch = {}
-                for item in switch:
-                    self.__switch[item] = True
+    def __init__(self, data: dict):
         self.__data = data
 
-    def process(self, switch: str, user_data: dict | list) -> dict | list | None:
-        if not self.__switch.get(switch, False):
-            return user_data
-        if type(user_data) is dict:
-            return self.__process_dict(user_data)
-        elif type(user_data) is list:
-            return self.__process_list(user_data)
+    def process(self, user_data: dict | list) -> dict | list | None:
+        try:
+            if type(user_data) is dict:
+                return self.__process_dict(user_data)
+            elif type(user_data) is list:
+                return self.__process_list(user_data)
+        except KeyError as ex:
+            error_and_exit(
+                "PIPER_KEY_ERROR",
+                f"'#d!{ex.__str__().strip("'")}' not found"
+            )
 
     def __process_list(self, user_data: list) -> list:
         new_data: list = []
         for value in user_data:
             match value:
-                case str() if len(value) > 3 and value[:3] == "#d!":
+                case str() if str(value).startswith("#d!"):
                     value = dpath.get(self.__data, value[3:])
                 case dict():
                     value = self.__process_dict(value)
@@ -225,7 +225,7 @@ class Piper:
     def __process_dict(self, user_data: dict) -> dict:
         for key, value in user_data.items():
             match value:
-                case str() if len(value) > 3 and value[:3] == "#d!":
+                case str() if str(value).startswith("#d!"):
                     user_data[key] = dpath.get(self.__data, value[3:])
                 case dict():
                     user_data[key] = self.__process_dict(value)
@@ -233,18 +233,19 @@ class Piper:
                     user_data[key] = self.__process_list(value)
         return user_data
 
+
 arg_dict = process_flag_args()
-piper = Piper(["arg"], {"arg": arg_dict})
+piper = Piper({"arg": arg_dict})
 if toml_data.pipe:
     all_pipe_data = {}
     try:
         pass_args = arg_pass()
         for key, pipe in toml_data.pipe.items():
             pipe_data = subprocess.run([
-                pipe, "--pipe"
-            ] + pass_args, check=True, capture_output=True).stdout.decode('utf-8').strip()
+                                           pipe, "--pipe"
+                                       ] + pass_args, check=True, capture_output=True).stdout.decode('utf-8').strip()
             all_pipe_data[key] = json.loads(pipe_data)
-        piper = Piper(["arg", "pipe"], {"arg": arg_dict, "pipe": all_pipe_data})
+        piper = Piper({"arg": arg_dict, "pipe": all_pipe_data})
     except subprocess.CalledProcessError as e:
         error_and_exit("PIPE_ERROR", e.__str__())
     except json.JSONDecodeError as e:
@@ -265,16 +266,16 @@ def process_endpoint_arg() -> str:
         previous_pos = pos
     endpoint_split.append(endpoint[previous_pos:].strip("/"))
 
-    endpoint = piper.process("arg", endpoint_split)
+    endpoint = piper.process(endpoint_split)
     return "/".join(str(v) for v in endpoint).rstrip("/")
 
 
 req = requests.Request(
     method=toml_data.http.method,
     url=adapter_data.url + process_endpoint_arg(),
-    headers=piper.process("arg", toml_data.http.headers) | adapter_data.headers,
-    params=piper.process("arg", toml_data.http.params),
-    cookies=piper.process("arg", toml_data.http.cookies),
+    headers=piper.process(toml_data.http.headers) | adapter_data.headers,
+    params=piper.process(toml_data.http.params),
+    cookies=piper.process(toml_data.http.cookies),
 )
 
 session = requests.Session()
@@ -284,9 +285,9 @@ prepared_req = req.prepare()
 if toml_data.http.method not in ["GET", "HEAD"]:
     if type(toml_data.http.payload) is str:
         json_payload = json.loads(toml_data.http.payload)
-        prepared_req.body = json.dumps(piper.process("arg", json_payload))
+        prepared_req.body = json.dumps(piper.process(json_payload))
     else:
-        prepared_req.body = json.dumps(piper.process("arg", toml_data.http.payload))
+        prepared_req.body = json.dumps(piper.process(toml_data.http.payload))
 
 if not adapter_data.verify:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
