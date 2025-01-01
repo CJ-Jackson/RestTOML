@@ -282,12 +282,14 @@ session = requests.Session()
 
 prepared_req = req.prepare()
 
+payload = "{}"
 if toml_data.http.method not in ["GET", "HEAD"]:
     if type(toml_data.http.payload) is str:
         json_payload = json.loads(toml_data.http.payload)
         prepared_req.body = json.dumps(piper.process(json_payload))
     else:
         prepared_req.body = json.dumps(piper.process(toml_data.http.payload))
+    payload = prepared_req.body
 
 if not adapter_data.verify:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -303,6 +305,8 @@ if flag_pipe:
             for key, morsel in simple_cookie.items():
                 cookies_[key] = morsel.value
     json.dump({
+        "edition": "json",
+        "request": {"headers": dict(res.request.headers), "payload": json.loads(payload)},
         "status": res.status_code,
         "headers": dict(res.headers),
         "cookies": cookies_,
@@ -314,7 +318,7 @@ if flag_show_request:
     print("-- Request Headers --")
     pprint(dict(res.request.headers), expand_all=True)
     print("-- Request Payload --")
-    print_json(res.request.body)
+    print_json(payload)
 
 print("-- Response --")
 print(f"Status: {res.status_code}")
