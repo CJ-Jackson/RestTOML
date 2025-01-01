@@ -230,17 +230,15 @@ class Piper:
             )
 
     def __process_list(self, user_data: list) -> list:
-        new_data: list = []
-        for value in user_data:
-            match value:
-                case str() if str(value).startswith("#d!"):
-                    value = self.__data[str(value)[3:].strip('/')]
+        for i in range(len(user_data)):
+            match user_data[i]:
+                case str() if str(user_data[i]).startswith("#d!"):
+                    user_data[i] = self.__data[str(user_data[i])[3:].strip('/')]
                 case dict():
-                    value = self.__process_dict(value)
+                    user_data[i] = self.__process_dict(user_data[i])
                 case list():
-                    value = self.__process_list(value)
-            new_data.append(value)
-        return new_data
+                    user_data[i] = self.__process_list(user_data[i])
+        return user_data
 
     def __process_dict(self, user_data: dict) -> dict:
         for key, value in user_data.items():
@@ -255,7 +253,7 @@ class Piper:
 
 
 arg_dict = process_flag_args()
-piper = Piper({"arg": arg_dict})
+piper = Piper({"arg": arg_dict, "test": [0, 42, 0]})
 if toml_data.pipe:
     all_pipe_data = {}
     try:
