@@ -251,9 +251,9 @@ class Piper:
     def process(self, user_data: dict | list) -> dict | list | None:
         try:
             if type(user_data) is dict:
-                return self.__process_dict(user_data)
+                return self.__process_dict(user_data.copy())
             elif type(user_data) is list:
-                return self.__process_list(user_data)
+                return self.__process_list(user_data.copy())
         except KeyError as ex:
             error_and_exit(
                 "PIPER_KEY_ERROR",
@@ -266,9 +266,9 @@ class Piper:
                 case str() if str(user_data[i]).startswith("#d!"):
                     user_data[i] = self.__data[str(user_data[i])[3:].strip('/')]
                 case dict():
-                    user_data[i] = self.__process_dict(user_data[i])
+                    user_data[i] = self.__process_dict(dict(user_data[i]))
                 case list():
-                    user_data[i] = self.__process_list(user_data[i])
+                    user_data[i] = self.__process_list(list(user_data[i]))
         return user_data
 
     def __process_dict(self, user_data: dict) -> dict:
@@ -277,9 +277,9 @@ class Piper:
                 case str() if str(value).startswith("#d!"):
                     user_data[key] = self.__data[str(value)[3:].strip('/')]
                 case dict():
-                    user_data[key] = self.__process_dict(value)
+                    user_data[key] = self.__process_dict(dict(value))
                 case list():
-                    user_data[key] = self.__process_list(value)
+                    user_data[key] = self.__process_list(list(value))
         return user_data
 
 

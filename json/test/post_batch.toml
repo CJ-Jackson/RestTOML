@@ -1,0 +1,12 @@
+#!/usr/bin/env rest_toml_json_batch
+[batch]
+script = "./post_batch_csv.toml"
+
+[http]
+endpoint = "posts"
+method = "post"
+
+[http.payload]
+title = "#d!batch/title"
+body = "#d!batch/body"
+userId = 1
