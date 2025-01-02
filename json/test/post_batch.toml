@@ -9,4 +9,4 @@ method = "post"
 [http.payload]
 title = "#d!batch/title"
 body = "#d!batch/body"
-userId = 1
+userId = "#d!batch/id"
