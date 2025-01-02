@@ -285,14 +285,12 @@ for pos in range(len(batch)):
 
     prepared_req = req.prepare()
 
-    payload = "{}"
     if toml_data.http.method not in ["GET", "HEAD"]:
         if type(toml_data.http.payload) is str:
             json_payload = json.loads(toml_data.http.payload)
             prepared_req.body = json.dumps(piper.process(json_payload))
         else:
             prepared_req.body = json.dumps(piper.process(toml_data.http.payload))
-        payload = prepared_req.body
 
     if not adapter_data.verify:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
