@@ -1,6 +1,7 @@
 #!/usr/bin/env rest_toml_json
-[pipe]
-todo = "./todo.toml"
+[pipe.todo]
+script = "./todo.toml"
+arg = ["--arg", "id:int=5"]
 
 [http]
 endpoint = "/posts"

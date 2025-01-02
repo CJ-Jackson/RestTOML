@@ -160,13 +160,37 @@ class HttpData():
         )
 
 
+class PipeDataError(Exception): pass
+
+
+@dataclass(frozen=True)
+class PipeData():
+    script: str
+    arg: tuple = ()
+    pass_pipe_flag: bool = True
+    pass_arg: bool = False
+
+    @classmethod
+    def create(cls, data: dict) -> Self:
+        if "script" not in data:
+            raise PipeDataError("Must have script!")
+        script = data["script"]
+
+        return cls(
+            script=script,
+            arg=tuple(data.get("arg", [])),
+            pass_pipe_flag=data.get("pass_pipe_flag", True),
+            pass_arg=data.get("pass_arg", False)
+        )
+
+
 class TomlDataError(Exception): pass
 
 
 @dataclass(frozen=True)
 class TomlData():
     http: HttpData
-    pipe: dict[str, str] | None = None
+    pipe: dict[str, PipeData] | None = None
 
     @classmethod
     def create(cls, data: dict) -> Self:
@@ -174,9 +198,15 @@ class TomlData():
             raise TomlDataError
         http = HttpData.create(data["http"])
 
+        pipe = None
+        if "pipe" in data:
+            pipe = data["pipe"]
+            for key, value in pipe.items():
+                pipe[key] = PipeData.create(value)
+
         return cls(
             http=http,
-            pipe=data.get("pipe", None)
+            pipe=pipe
         )
 
 
@@ -186,6 +216,8 @@ except HttpDataError as e:
     error_and_exit("HTTP_DATA_ERROR", e.__str__())
 except TomlDataError as e:
     error_and_exit("TOML_DATA_ERROR", e.__str__())
+except PipeDataError as e:
+    error_and_exit("PIPE_DATA_ERROR", e.__str__())
 
 
 def _list_to_dict(v: list) -> dict:
@@ -258,9 +290,15 @@ if toml_data.pipe:
     try:
         pass_args = arg_pass()
         for key, pipe in toml_data.pipe.items():
+            extra = []
+            if pipe.pass_pipe_flag:
+                extra += ["--pipe"]
+            extra += list(pipe.arg)
+            if pipe.pass_arg:
+                extra += pass_args
             pipe_data = subprocess.run([
-                                           pipe, "--pipe"
-                                       ] + pass_args, check=True, capture_output=True).stdout.decode('utf-8').strip()
+                                           pipe.script
+                                       ] + extra, check=True, capture_output=True).stdout.decode('utf-8').strip()
             all_pipe_data[key] = json.loads(pipe_data)
         piper = Piper({"arg": arg_dict, "pipe": all_pipe_data})
     except subprocess.CalledProcessError as e:
