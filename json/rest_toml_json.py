@@ -364,6 +364,7 @@ if flag_pipe:
     json.dump({
         "edition": "json",
         "request": {"headers": dict(res.request.headers), "payload": json.loads(payload)},
+        "url": res.request.url,
         "status": res.status_code,
         "headers": dict(res.headers),
         "cookies": cookies_,
@@ -378,7 +379,7 @@ if flag_show_request:
     print_json(payload)
 
 print("-- Response --")
-print(f"URL: {req.url}")
+print(f"URL: {res.request.url}")
 print(f"Status: {res.status_code}")
 print(f"Elapsed: {res.elapsed}")
 if flag_show_header:
