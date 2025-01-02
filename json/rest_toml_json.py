@@ -189,7 +189,7 @@ except TomlDataError as e:
 
 
 def _list_to_dict(v: list) -> dict:
-    d = {}
+    d = {"_": tuple(v)}
     for i in range(len(v)):
         d[str(i)] = v[i]
     return d
