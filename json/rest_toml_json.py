@@ -288,7 +288,7 @@ def process_endpoint_arg() -> str:
 
 req = requests.Request(
     method=toml_data.http.method,
-    url=adapter_data.url + process_endpoint_arg(),
+    url=adapter_data.url.rstrip("/") + "/" + process_endpoint_arg(),
     headers=piper.process(toml_data.http.headers) | adapter_data.headers,
     params=piper.process(toml_data.http.params),
     cookies=piper.process(toml_data.http.cookies),
