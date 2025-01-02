@@ -35,7 +35,6 @@ args = parser.parse_args()
 arg_toml = args.toml
 flag_adapter = args.adapter
 
-
 adapter_data = {
     "url": "https://jsonplaceholder.typicode.com/",
     "headers": {"Content-type": "application/json; charset=UTF-8"},
@@ -141,6 +140,7 @@ class BatchData():
             arg=tuple(data.get("arg", [])),
             key=data.get("key", "batch")
         )
+
 
 class TomlDataError(Exception): pass
 
@@ -258,8 +258,8 @@ def process_endpoint_arg(piper: Piper) -> str:
 batch: list | None = None
 try:
     batch_data = subprocess.run([
-        toml_data.batch.script
-    ]+list(toml_data.batch.arg), capture_output=True, check=True).stdout.decode('utf-8')
+                                    toml_data.batch.script
+                                ] + list(toml_data.batch.arg), capture_output=True, check=True).stdout.decode('utf-8')
     batch_data = json.loads(batch_data)
     batch = batch_data[toml_data.batch.key]
 except KeyError as e:
@@ -303,8 +303,7 @@ for pos in range(len(batch)):
     except requests.ConnectionError as e:
         error_and_exit("REQUESTS_CONNECTION_ERROR", e.__str__())
 
-
-    print(f"-- Response {pos+1} --")
+    print(f"-- Response {pos + 1} --")
     print(f"URL: {res.request.url}")
     print(f"Status: {res.status_code}")
     print(f"Elapsed: {res.elapsed}")
