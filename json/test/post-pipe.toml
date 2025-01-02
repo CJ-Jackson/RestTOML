@@ -4,7 +4,7 @@ script = "./todo.toml"
 arg = ["--arg", "id:int=5"]
 
 [http]
-endpoint = "/posts"
+endpoint = "posts"
 method = "post"
 
 [http.payload]

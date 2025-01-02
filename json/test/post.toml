@@ -1,6 +1,6 @@
 #!/usr/bin/env rest_toml_json
 [http]
-endpoint = "/posts"
+endpoint = "posts"
 method = "post"
 
 [http.payload]
