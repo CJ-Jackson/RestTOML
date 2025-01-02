@@ -1,0 +1,8 @@
+#!/usr/bin/env rest_toml_json_batch
+
+[batch]
+script = "./json_todo_batch.toml"
+
+[http]
+# todos/{id}
+endpoint = "todos/#d!batch/id"

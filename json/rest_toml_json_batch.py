@@ -12,14 +12,12 @@ import os
 import subprocess
 import sys
 import tomllib
-from http import cookies
 from dataclasses import dataclass, field
 from typing import Self, MutableMapping, Any
 
 import requests
 import urllib3
 from rich import print_json
-from rich.pretty import pprint
 
 
 def error_and_exit(error_name: str, error_message: str):
@@ -31,48 +29,11 @@ parser = argparse.ArgumentParser(description="Process HTTP Rest request for JSON
 
 parser.add_argument("toml")
 parser.add_argument("--adapter")
-parser.add_argument("--show-request", action='store_true')
-parser.add_argument("--show-header", action='store_true')
-parser.add_argument("--pipe", action='store_true')
-parser.add_argument("--arg", action='append')
 
 args = parser.parse_args()
 
 arg_toml = args.toml
 flag_adapter = args.adapter
-flag_show_request = args.show_request
-flag_show_header = args.show_header
-flag_pipe = args.pipe
-flag_args = args.arg
-
-
-def process_flag_args() -> dict:
-    arg_dict = {}
-    if not flag_args:
-        return arg_dict
-    for arg in flag_args:
-        arg = str(arg).split("=", maxsplit=2)
-        if len(arg) == 2:
-            name = arg[0]
-            value = arg[1]
-            if name.endswith(":int"):
-                name = name.removesuffix(":int")
-                value = int(value)
-            if name.endswith(":float"):
-                name = name.removesuffix(":int")
-                value = float(value)
-            if name.endswith(":bool"):
-                name = arg[0].removesuffix(":bool")
-                value = bool(int(arg[1]))
-            arg_dict[name.split(":", maxsplit=2)[0]] = value
-    return arg_dict
-
-
-def arg_pass() -> list:
-    args = []
-    for arg in flag_args:
-        args += ["--arg", str(arg)]
-    return args
 
 
 adapter_data = {
@@ -160,29 +121,26 @@ class HttpData():
         )
 
 
-class PipeDataError(Exception): pass
+class BatchDataError(Exception): pass
 
 
 @dataclass(frozen=True)
-class PipeData():
+class BatchData():
     script: str
     arg: tuple = ()
-    pass_pipe_flag: bool = True
-    pass_arg: bool = False
+    key: str = "batch"
 
     @classmethod
     def create(cls, data: dict) -> Self:
         if "script" not in data:
-            raise PipeDataError("Must have script!")
+            raise BatchDataError("Must have script")
         script = data["script"]
 
         return cls(
             script=script,
             arg=tuple(data.get("arg", [])),
-            pass_pipe_flag=data.get("pass_pipe_flag", True),
-            pass_arg=data.get("pass_arg", False)
+            key=data.get("key", "batch")
         )
-
 
 class TomlDataError(Exception): pass
 
@@ -190,23 +148,19 @@ class TomlDataError(Exception): pass
 @dataclass(frozen=True)
 class TomlData():
     http: HttpData
-    pipe: dict[str, PipeData] | None = None
+    batch: BatchData
 
     @classmethod
     def create(cls, data: dict) -> Self:
         if "http" not in data:
             raise TomlDataError("Must have http")
         http = HttpData.create(data["http"])
-
-        pipe = None
-        if "pipe" in data:
-            pipe = data["pipe"]
-            for key, value in pipe.items():
-                pipe[key] = PipeData.create(value)
-
+        if "batch" not in data:
+            raise TomlDataError("Must have batch")
+        batch = BatchData.create(data["batch"])
         return cls(
             http=http,
-            pipe=pipe
+            batch=batch
         )
 
 
@@ -216,8 +170,8 @@ except HttpDataError as e:
     error_and_exit("HTTP_DATA_ERROR", e.__str__())
 except TomlDataError as e:
     error_and_exit("TOML_DATA_ERROR", e.__str__())
-except PipeDataError as e:
-    error_and_exit("PIPE_DATA_ERROR", e.__str__())
+except BatchDataError as e:
+    error_and_exit("BATCH_DATA_ERROR", e.__str__())
 
 
 def _list_to_dict(v: list) -> dict:
@@ -283,107 +237,76 @@ class Piper:
         return user_data
 
 
-arg_dict = process_flag_args()
-piper = Piper({"arg": arg_dict})
-if toml_data.pipe:
-    all_pipe_data = {}
-    try:
-        pass_args = arg_pass()
-        for key, pipe in toml_data.pipe.items():
-            extra = []
-            if pipe.pass_pipe_flag:
-                extra += ["--pipe"]
-            extra += list(pipe.arg)
-            if pipe.pass_arg:
-                extra += pass_args
-            pipe_data = subprocess.run([
-                                           pipe.script
-                                       ] + extra, check=True, capture_output=True).stdout.decode('utf-8').strip()
-            all_pipe_data[key] = json.loads(pipe_data)
-        piper = Piper({"arg": arg_dict, "pipe": all_pipe_data})
-    except subprocess.CalledProcessError as e:
-        error_and_exit("PIPE_ERROR", e.__str__())
-    except json.JSONDecodeError as e:
-        error_and_exit("JSON_PIPE_ERROR", e.__str__())
+endpoint = toml_data.http.endpoint
+
+d_poss = [i for i in range(len(endpoint)) if endpoint.startswith("#d!", i) or endpoint.startswith("//", i)]
+
+endpoint_split = []
+previous_pos = 0
+for pos in d_poss:
+    endpoint_split.append(endpoint[previous_pos:pos].strip("/"))
+    previous_pos = pos
+endpoint_split.append(endpoint[previous_pos:].strip("/"))
+endpoint_split = tuple(endpoint_split)
 
 
-def process_endpoint_arg() -> str:
-    endpoint = toml_data.http.endpoint
-
-    d_poss = [i for i in range(len(endpoint)) if endpoint.startswith("#d!", i) or endpoint.startswith("//", i)]
-
-    endpoint_split = []
-    previous_pos = 0
-    for pos in d_poss:
-        endpoint_split.append(endpoint[previous_pos:pos].strip("/"))
-        previous_pos = pos
-    endpoint_split.append(endpoint[previous_pos:].strip("/"))
-
-    endpoint = piper.process(endpoint_split)
+def process_endpoint_arg(piper: Piper) -> str:
+    endpoint = piper.process(list(endpoint_split))
     return "/".join(str(v) for v in endpoint).rstrip("/")
 
 
-req = requests.Request(
-    method=toml_data.http.method,
-    url=adapter_data.url.rstrip("/") + "/" + process_endpoint_arg(),
-    headers=piper.process(toml_data.http.headers) | adapter_data.headers,
-    params=piper.process(toml_data.http.params),
-    cookies=piper.process(toml_data.http.cookies),
-)
+batch: list | None = None
+try:
+    batch_data = subprocess.run([
+        toml_data.batch.script
+    ]+list(toml_data.batch.arg), capture_output=True, check=True).stdout.decode('utf-8')
+    batch_data = json.loads(batch_data)
+    batch = batch_data[toml_data.batch.key]
+except KeyError as e:
+    error_and_exit("BATCH_KEY_ERROR", e.__str__())
+except json.JSONDecodeError as e:
+    error_and_exit("BATCH_JSON_ERROR", e.__str__())
+except subprocess.CalledProcessError as e:
+    error_and_exit("BATCH_PROCESS_ERROR", e.__str__())
 
 session = requests.Session()
 
-prepared_req = req.prepare()
+for pos in range(len(batch)):
 
-payload = "{}"
-if toml_data.http.method not in ["GET", "HEAD"]:
-    if type(toml_data.http.payload) is str:
-        json_payload = json.loads(toml_data.http.payload)
-        prepared_req.body = json.dumps(piper.process(json_payload))
-    else:
-        prepared_req.body = json.dumps(piper.process(toml_data.http.payload))
-    payload = prepared_req.body
+    piper = Piper({"batch": batch[pos]})
 
-if not adapter_data.verify:
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    req = requests.Request(
+        method=toml_data.http.method,
+        url=adapter_data.url.rstrip("/") + "/" + process_endpoint_arg(piper),
+        headers=piper.process(toml_data.http.headers) | adapter_data.headers,
+        params=piper.process(toml_data.http.params),
+        cookies=piper.process(toml_data.http.cookies),
+    )
 
-res: requests.Response | None = None
-try:
-    res = session.send(prepared_req, verify=adapter_data.verify)
-except requests.ConnectionError as e:
-    error_and_exit("REQUESTS_CONNECTION_ERROR", e.__str__())
+    prepared_req = req.prepare()
 
-if flag_pipe:
-    cookies_ = {}
-    if "set-cookie" in dict(res.headers):
-        for cookie in dict(res.headers["set-cookie"]):
-            simple_cookie = cookies.SimpleCookie()
-            simple_cookie.load(cookie)
-            for key, morsel in simple_cookie.items():
-                cookies_[key] = morsel.value
-    json.dump({
-        "edition": "json",
-        "request": {"headers": dict(res.request.headers), "payload": json.loads(payload)},
-        "url": res.request.url,
-        "status": res.status_code,
-        "headers": dict(res.headers),
-        "cookies": cookies_,
-        "body": res.json(),
-    }, sys.stdout, indent="\t")
-    exit(0)
+    payload = "{}"
+    if toml_data.http.method not in ["GET", "HEAD"]:
+        if type(toml_data.http.payload) is str:
+            json_payload = json.loads(toml_data.http.payload)
+            prepared_req.body = json.dumps(piper.process(json_payload))
+        else:
+            prepared_req.body = json.dumps(piper.process(toml_data.http.payload))
+        payload = prepared_req.body
 
-if flag_show_request:
-    print("-- Request Headers --")
-    pprint(dict(res.request.headers), expand_all=True)
-    print("-- Request Payload --")
-    print_json(payload)
+    if not adapter_data.verify:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-print("-- Response --")
-print(f"URL: {res.request.url}")
-print(f"Status: {res.status_code}")
-print(f"Elapsed: {res.elapsed}")
-if flag_show_header:
-    print("-- Response Headers --")
-    pprint(dict(res.headers), expand_all=True)
-print("-- Response Body --")
-print_json(res.text)
+    res: requests.Response | None = None
+    try:
+        res = session.send(prepared_req, verify=adapter_data.verify)
+    except requests.ConnectionError as e:
+        error_and_exit("REQUESTS_CONNECTION_ERROR", e.__str__())
+
+
+    print(f"-- Response {pos+1} --")
+    print(f"URL: {res.request.url}")
+    print(f"Status: {res.status_code}")
+    print(f"Elapsed: {res.elapsed}")
+    print("-- Response Body --")
+    print_json(res.text)
