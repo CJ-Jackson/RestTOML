@@ -18,6 +18,7 @@ from typing import Self, MutableMapping, Any
 import requests
 import urllib3
 from rich import print_json
+from rich.pretty import pprint
 
 
 def error_and_exit(error_name: str, error_message: str):
@@ -29,11 +30,13 @@ parser = argparse.ArgumentParser(description="Process HTTP Rest request for JSON
 
 parser.add_argument("toml")
 parser.add_argument("--adapter")
+parser.add_argument("--show-request", action='store_true')
 
 args = parser.parse_args()
 
 arg_toml = args.toml
 flag_adapter = args.adapter
+flag_show_request = args.show_request
 
 adapter_data = {
     "url": "https://jsonplaceholder.typicode.com/",
@@ -285,12 +288,14 @@ for pos in range(len(batch)):
 
     prepared_req = req.prepare()
 
+    payload = "{}"
     if toml_data.http.method not in ["GET", "HEAD"]:
         if type(toml_data.http.payload) is str:
             json_payload = json.loads(toml_data.http.payload)
             prepared_req.body = json.dumps(piper.process(json_payload))
         else:
             prepared_req.body = json.dumps(piper.process(toml_data.http.payload))
+        payload = prepared_req.body
 
     if not adapter_data.verify:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -301,7 +306,15 @@ for pos in range(len(batch)):
     except requests.ConnectionError as e:
         error_and_exit("REQUESTS_CONNECTION_ERROR", e.__str__())
 
-    print(f"-- Response {pos + 1} --")
+    print(f"-- Batch: {pos + 1} --")
+
+    if flag_show_request:
+        print("-- Request Headers --")
+        pprint(dict(res.request.headers), expand_all=True)
+        print("-- Request Payload --")
+        print_json(payload)
+
+    print("-- Response --")
     print(f"URL: {res.request.url}")
     print(f"Status: {res.status_code}")
     print(f"Elapsed: {res.elapsed}")
