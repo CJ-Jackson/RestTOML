@@ -10,7 +10,7 @@ import os
 import sys
 import tomllib
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, Any
 
 
 def error_and_exit(error_name: str, error_message: str):
@@ -42,6 +42,7 @@ class CsvData():
     file: str
     use_header: bool = True
     map: tuple = ()
+    hint: tuple = ()
     delimiter: str = ','
     dialect: str = 'excel'
     quotechar: str = "'"
@@ -56,10 +57,35 @@ class CsvData():
             file=file,
             use_header=data.get("use_header", True),
             map=tuple(data.get("map", [])),
+            hint=tuple(data.get("hint", [])),
             delimiter=data.get("delimiter", ','),
             dialect=data.get("dialect", 'excel'),
             quotechar=data.get("quotechar", "'")
         )
+
+    def hint_len_check(self, row_len: int):
+        if not self.hint:
+            return
+        if len(self.hint) != row_len:
+            error_and_exit(
+                "HINT_NOT_EQUAL_TO_ROW",
+                "lenght of hint, need to match lenght of row!"
+                )
+
+    def hint_value(self, pos: int, value: str) -> str | int | float | bool:
+        if not self.hint:
+            return str(value)
+        match self.hint[pos]:
+            case "str" | "string":
+                return str(value)
+            case "int" | "interger":
+                return int(value)
+            case "float":
+                return float(value)
+            case "bool":
+                return bool(int(value))
+        return str(value)
+
 
 
 try:
@@ -81,6 +107,7 @@ with open(toml_data.file) as csvfile:
     for row in csv_reader:
         row = list(row)
         if first:
+            toml_data.hint_len_check(len(row))
             first = False
             if toml_data.use_header:
                 csv_header = row
@@ -92,10 +119,10 @@ with open(toml_data.file) as csvfile:
             if len(csv_header) != len(row):
                 error_and_exit("CSV_HEADER_LENGHT", "Length of CSV is not equal to row")
             for i in range(len(csv_header)):
-                map[csv_header[i]] = row[i]
+                map[csv_header[i]] = toml_data.hint_value(i, row[i])
         else:
             for i in range(len(row)):
-                map[str(i)] = row[i]
+                map[str(i)] = toml_data.hint_value(i, row[i])
         csv_list.append(map)
 
 json.dump({"batch": csv_list}, sys.stdout, indent="\t")

@@ -1,2 +1,0 @@
-#!/usr/bin/env csv2json
-file = "./post_batch.csv"
