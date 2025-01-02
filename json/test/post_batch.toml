@@ -1,6 +1,6 @@
 #!/usr/bin/env rest_toml_json_batch
 [batch]
-script = "./post_batch_csv.toml"
+script = "./csv_post_batch.toml"
 
 [http]
 endpoint = "posts"
