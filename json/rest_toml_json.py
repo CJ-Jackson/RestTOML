@@ -310,7 +310,11 @@ if toml_data.http.method not in ["GET", "HEAD"]:
 if not adapter_data.verify:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-res = session.send(prepared_req, verify=adapter_data.verify)
+res: requests.Response | None = None
+try:
+    res = session.send(prepared_req, verify=adapter_data.verify)
+except requests.ConnectionError as e:
+    error_and_exit("REQUESTS_CONNECTION_ERROR", e.__str__())
 
 if flag_pipe:
     cookies_ = {}
