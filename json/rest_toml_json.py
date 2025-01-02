@@ -211,7 +211,6 @@ def flatten_dict(d: MutableMapping, parent_key: str = '', sep: str = '/'):
 
 
 class Piper:
-    __switch: dict[str, bool]
     __data: dict
 
     def __init__(self, data: dict):
