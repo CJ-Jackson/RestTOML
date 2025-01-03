@@ -5,6 +5,7 @@
 # ///
 import argparse
 import csv
+import datetime
 import json
 import os
 import sys
@@ -32,6 +33,67 @@ except (OSError, tomllib.TOMLDecodeError):
     print("Failed to open toml", file=sys.stderr)
 
 os.chdir(os.path.dirname(os.path.abspath(arg_toml)))
+
+
+hint_cmd = {}
+
+def handle_hint_command(data: dict, value: str) -> str:
+    try:
+        return hint_cmd[data["cmd"]](data, value)
+    except KeyError as e:
+        error_and_exit("HINT_COMMAND_KEY_ERROR", e.__str__())
+    return value
+
+class DateTimeFormatterError(Exception): pass
+
+
+@dataclass(frozen=True)
+class DateTimeFormatter():
+    from_format: str
+    to_format: str
+    allow_fail: bool = False
+
+    @classmethod
+    def create(cls, data: dict) -> Self:
+        _cls: Self
+        match data:
+            case {"to": str(), "from": str()}:
+                _cls = cls(
+                    from_format=data["from"],
+                    to_format=data["to"],
+                    allow_fail=data.get("allow_fail", False)
+                )
+            case _:
+                raise DateTimeFormatterError("Must have `from` and `to`")
+        return _cls
+
+    def defined_format(self, format: str) -> str:
+        format_dict = {
+            "_json": "%Y-%m-%dT%H:%M:%S.%fZ",
+        }
+        return format_dict.get(format, format)
+
+    def process(self, value: str) -> str:
+        try:
+            from_format = self.defined_format(self.from_format)
+            to_format = self.defined_format(self.to_format)
+            convert_value = datetime.datetime.strptime(value, from_format).strftime(to_format)
+            return convert_value
+        except ValueError as e:
+            if self.allow_fail:
+                return value
+            raise DateTimeFormatterError(e.__str__())
+
+
+def handle_date_time_cmd(data: dict, value: str) -> str:
+    try:
+        return DateTimeFormatter.create(data).process(value)
+    except DateTimeFormatter as e:
+        error_and_exit("DATE_TIME_FORMATTER", e.__str__())
+    return value
+
+
+hint_cmd["datetime_format"] = handle_date_time_cmd
 
 
 class CsvDataError(Exception): pass
@@ -88,6 +150,8 @@ class CsvData():
                 return float(value)
             case "bool" | {"type": "bool"}:
                 return bool(int(value))
+            case {"cmd": _}:
+                return handle_hint_command(self.hint[pos], value)
         return str(value)
 
 
