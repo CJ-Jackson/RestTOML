@@ -1,0 +1,8 @@
+#!/usr/bin/env rest_toml_xml_batch
+
+[batch]
+script = "./animal_get_batch.csv.toml"
+
+[http]
+# animal/{id}
+endpoint = "animal/#d!batch/id"

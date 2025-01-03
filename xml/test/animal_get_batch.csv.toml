@@ -1,0 +1,13 @@
+#!/usr/bin/env csv2json
+
+file = "./animal_get_batch.csv"
+
+[[hint]]
+type = "int"
+
+[[hint]]
+cmd = "datetime_format"
+from = "%Y-%m-%d"
+to = "_json"
+tz = "UTC"
+to_tz = "America/New_York"

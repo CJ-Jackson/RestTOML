@@ -3,7 +3,8 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #   "requests>=2.32.3",
-#   "rich>=13.9.4"
+#   "rich>=13.9.4",
+#   "xmltodict>=0.14.2"
 # ]
 # ///
 import argparse
@@ -19,7 +20,8 @@ from typing import Self, MutableMapping, Any
 import requests
 import urllib3
 import xmltodict
-from rich import print_json, Console
+from rich import print_json
+from rich.console import Console
 from rich.pretty import pprint
 from rich.syntax import Syntax
 
@@ -43,7 +45,7 @@ flag_show_request = args.show_request
 
 adapter_data = {
     "url": "http://127.0.0.1:18080",
-    "headers": {"Content-Type": "application/xml; charset=UTF-8"},
+    "headers": {"Content-Type": "application/xml; charset=utf-8"},
     "verify": True,
 }
 
@@ -321,14 +323,13 @@ for pos in range(len(batch)):
     print(f"Status: {res.status_code}")
     print(f"Elapsed: {res.elapsed}")
     print("-- Response Body --")
-    print_json(res.text)
 
     console = Console()
     if not res.text:
-        exit(0)
+        continue
     try:
         xml_res = xmltodict.parse(res.text)
         syntax = Syntax(xmltodict.unparse(xml_res, pretty=True), "xml", background_color="black")
         console.print(syntax)
     except ExpatError:
-        exit(0)
+        continue
