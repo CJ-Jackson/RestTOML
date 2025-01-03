@@ -10,7 +10,9 @@ import json
 import os
 import sys
 import tomllib
+import zoneinfo
 from dataclasses import dataclass
+from time import tzname
 from typing import Self, Any
 
 
@@ -52,6 +54,7 @@ class DateTimeFormatter():
     from_format: str
     to_format: str
     allow_fail: bool = False
+    tz: str | None = None
 
     @classmethod
     def create(cls, data: dict) -> Self:
@@ -61,7 +64,8 @@ class DateTimeFormatter():
                 _cls = cls(
                     from_format=data["from"],
                     to_format=data["to"],
-                    allow_fail=data.get("allow_fail", False)
+                    allow_fail=data.get("allow_fail", False),
+                    tz=data.get("tz", None)
                 )
             case _:
                 raise DateTimeFormatterError("Must have `from` and `to`")
@@ -75,11 +79,16 @@ class DateTimeFormatter():
 
     def process(self, value: str) -> str:
         try:
+            try:
+                tz = zoneinfo.ZoneInfo(self.tz)
+            except TypeError:
+                tz = None
+                pass
             from_format = self.defined_format(self.from_format)
             to_format = self.defined_format(self.to_format)
-            convert_value = datetime.datetime.strptime(value, from_format).strftime(to_format)
+            convert_value = datetime.datetime.strptime(value, from_format).astimezone(tz).strftime(to_format)
             return convert_value
-        except ValueError as e:
+        except (zoneinfo.ZoneInfoNotFoundError, ValueError) as e:
             if self.allow_fail:
                 return value
             raise DateTimeFormatterError(e.__str__())
