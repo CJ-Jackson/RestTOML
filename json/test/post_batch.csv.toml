@@ -1,3 +1,11 @@
 #!/usr/bin/env csv2json
 file = "./post_batch.csv"
-hint = ["str", "str", "int"]
+
+[[hint]]
+type = "str"
+
+[[hint]]
+type = "str"
+
+[[hint]]
+type = "int"

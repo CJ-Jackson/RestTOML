@@ -45,7 +45,9 @@ class CsvData():
     hint: tuple = ()
     delimiter: str = ','
     dialect: str = 'excel'
-    quotechar: str = "'"
+    quotechar: str = '"'
+    skipinitialspace: bool = False
+    strict: bool = False
 
     @classmethod
     def create(cls, data: dict) -> Self:
@@ -60,7 +62,9 @@ class CsvData():
             hint=tuple(data.get("hint", [])),
             delimiter=data.get("delimiter", ','),
             dialect=data.get("dialect", 'excel'),
-            quotechar=data.get("quotechar", "'")
+            quotechar=data.get("quotechar", '"'),
+            skipinitialspace=data.get("skipinitialspace", False),
+            strict=data.get("strict", False)
         )
 
     def hint_len_check(self, row_len: int):
@@ -76,13 +80,13 @@ class CsvData():
         if not self.hint:
             return str(value)
         match self.hint[pos]:
-            case "str" | "string":
+            case "str" | "string" | {"type": "str"} | {"type": "string"}:
                 return str(value)
-            case "int" | "interger":
+            case "int" | "integer" | {"type": "int"} | {"type": "integer"}:
                 return int(value)
-            case "float":
+            case "float" | {"type": "float"}:
                 return float(value)
-            case "bool":
+            case "bool" | {"type": "bool"}:
                 return bool(int(value))
         return str(value)
 
