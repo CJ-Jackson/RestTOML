@@ -74,12 +74,6 @@ class DateTimeFormatter():
                 raise DateTimeFormatterError("Must have `from` and `to`")
         return _cls
 
-    def defined_format(self, format: str) -> str:
-        format_dict = {
-            "_json": "%Y-%m-%dT%H:%M:%S.%fZ",
-        }
-        return format_dict.get(format, format)
-
     def process(self, value: str) -> str:
         try:
             try:
@@ -92,8 +86,8 @@ class DateTimeFormatter():
             except TypeError:
                 to_tz = None
                 pass
-            from_format = self.defined_format(self.from_format)
-            to_format = self.defined_format(self.to_format)
+            from_format = self.__defined_format(self.from_format)
+            to_format = self.__defined_format(self.to_format)
             dt = datetime.datetime.strptime(value, from_format)
             if tz:
                 dt = dt.replace(tzinfo=tz)
@@ -104,6 +98,12 @@ class DateTimeFormatter():
             if self.allow_fail:
                 return value
             raise DateTimeFormatterError(e.__str__())
+
+    def __defined_format(self, format: str) -> str:
+        format_dict = {
+            "_json": "%Y-%m-%dT%H:%M:%S.%fZ",
+        }
+        return format_dict.get(format, format)
 
 
 def handle_date_time_cmd(data: dict, value: str) -> str:
