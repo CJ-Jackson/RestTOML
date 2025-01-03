@@ -63,16 +63,16 @@ class DateTimeFormatter():
         _cls: Self
         match data:
             case {"to": str(), "from": str()}:
-                _cls = cls(
-                    from_format=data["from"],
-                    to_format=data["to"],
-                    allow_fail=data.get("allow_fail", False),
-                    tz=data.get("tz", None),
-                    to_tz=data.get("to_tz", None)
-                )
+                pass
             case _:
-                raise DateTimeFormatterError("Must have `from` and `to`")
-        return _cls
+                raise DateTimeFormatterError("Must have 'from'(str) and 'to'(str)")
+        return cls(
+            from_format=data["from"],
+            to_format=data["to"],
+            allow_fail=data.get("allow_fail", False),
+            tz=data.get("tz", None),
+            to_tz=data.get("to_tz", None)
+        )
 
     def process(self, value: str) -> str:
         try:
@@ -134,12 +134,13 @@ class CsvData():
 
     @classmethod
     def create(cls, data: dict) -> Self:
-        if "file" not in data:
-            raise CsvDataError("Must have file")
-        file = data["file"]
-
+        match data:
+            case {"file": str()}:
+                pass
+            case _:
+                raise CsvDataError("Must have 'file'(str)")
         return cls(
-            file=file,
+            file=data["file"],
             use_header=data.get("use_header", True),
             map=tuple(data.get("map", [])),
             hint=tuple(data.get("hint", [])),

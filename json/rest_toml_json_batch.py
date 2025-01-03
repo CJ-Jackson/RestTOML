@@ -117,7 +117,6 @@ class HttpData():
                 pass
             case _:
                 raise HttpDataError("Must have 'endpoint'(str)")
-
         return cls(
             endpoint=data["endpoint"],
             params=data.get("params", {}),

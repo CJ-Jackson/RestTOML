@@ -197,7 +197,6 @@ class PipeData():
                 pass
             case _:
                 raise PipeDataError("Must have 'script'(str)")
-
         return cls(
             script=data["script"],
             arg=tuple(data.get("arg", [])),
