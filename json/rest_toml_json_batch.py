@@ -67,13 +67,16 @@ class AdapterData():
 
     @classmethod
     def create(cls, data: dict):
-        if "url" not in data:
-            raise AdapterDataError("Adapter must provide url")
-        url = data["url"]
-        if "headers" not in data:
-            raise AdapterDataError("Adapter must provide headers")
-        headers = data["headers"]
-        return cls(url=url, headers=headers, verify=data.get("verify", True))
+        match data:
+            case {"url": str(), "headers": dict()}:
+                pass
+            case _:
+                raise AdapterDataError("Adapter must have 'url'(str) and 'headers'(dict)")
+        return cls(
+            url=data["url"],
+            headers=data["headers"],
+            verify=data.get("verify", True)
+        )
 
 
 try:
@@ -109,12 +112,14 @@ class HttpData():
 
     @classmethod
     def create(cls, data: dict) -> Self:
-        if "endpoint" not in data:
-            raise HttpDataError("Must have endpoint")
-        endpoint = data["endpoint"]
+        match data:
+            case {"endpoint": str()}:
+                pass
+            case _:
+                raise HttpDataError("Must have 'endpoint'(str)")
 
         return cls(
-            endpoint=endpoint,
+            endpoint=data["endpoint"],
             params=data.get("params", {}),
             headers=data.get("headers", {}),
             cookies=data.get("cookies", {}),
@@ -134,12 +139,13 @@ class BatchData():
 
     @classmethod
     def create(cls, data: dict) -> Self:
-        if "script" not in data:
-            raise BatchDataError("Must have script")
-        script = data["script"]
-
+        match data:
+            case {"script": str()}:
+                pass
+            case _:
+                raise BatchDataError("Must have 'script'(str)")
         return cls(
-            script=script,
+            script=data["script"],
             arg=tuple(data.get("arg", [])),
             key=data.get("key", "batch")
         )
@@ -155,15 +161,14 @@ class TomlData():
 
     @classmethod
     def create(cls, data: dict) -> Self:
-        if "http" not in data:
-            raise TomlDataError("Must have http")
-        http = HttpData.create(data["http"])
-        if "batch" not in data:
-            raise TomlDataError("Must have batch")
-        batch = BatchData.create(data["batch"])
+        match data:
+            case {"http": dict(), "batch": dict()}:
+                pass
+            case _:
+                raise TomlDataError("Must have 'http'(dict) and 'batch'(dict)")
         return cls(
-            http=http,
-            batch=batch
+            http=HttpData.create(data["http"]),
+            batch= BatchData.create(data["batch"])
         )
 
 
