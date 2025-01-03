@@ -12,8 +12,6 @@ import sys
 import tomllib
 import zoneinfo
 from dataclasses import dataclass
-from datetime import tzinfo
-from time import tzname
 from typing import Self, Any
 
 
