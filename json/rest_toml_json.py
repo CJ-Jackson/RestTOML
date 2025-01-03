@@ -34,6 +34,7 @@ parser.add_argument("--adapter")
 parser.add_argument("--show-request", action='store_true')
 parser.add_argument("--show-header", action='store_true')
 parser.add_argument("--pipe", action='store_true')
+parser.add_argument("--indent", action='store_true')
 parser.add_argument("--arg", action='append')
 
 args = parser.parse_args()
@@ -44,6 +45,7 @@ flag_show_request = args.show_request
 flag_show_header = args.show_header
 flag_pipe = args.pipe
 flag_args = args.arg
+flag_indent = args.indent
 
 
 def process_flag_args(data_type: dict) -> dict:
@@ -376,7 +378,7 @@ if flag_pipe:
             simple_cookie.load(cookie)
             for key, morsel in simple_cookie.items():
                 cookies_[key] = morsel.value
-    json.dump({
+    json_output = {
         "edition": "json",
         "request": {"headers": dict(res.request.headers), "payload": json.loads(payload)},
         "url": res.request.url,
@@ -384,7 +386,12 @@ if flag_pipe:
         "headers": dict(res.headers),
         "cookies": cookies_,
         "body": res.json(),
-    }, sys.stdout, indent="\t")
+        "elapsed": f"{res.elapsed}"
+    }
+    if flag_indent:
+        json.dump(json_output, sys.stdout, indent="\t")
+    else:
+        json.dump(json_output, sys.stdout)
     exit(0)
 
 if flag_show_request:

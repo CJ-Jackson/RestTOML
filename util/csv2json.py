@@ -22,9 +22,11 @@ def error_and_exit(error_name: str, error_message: str):
 
 parser = argparse.ArgumentParser("Convert CSV to Json")
 parser.add_argument("toml")
+parser.add_argument("--indent", action='store_true')
 args = parser.parse_args()
 
 arg_toml = args.toml
+flag_indent = args.indent
 
 toml_data = None
 try:
@@ -213,4 +215,7 @@ with open(toml_data.file) as csvfile:
                 map[str(i)] = toml_data.hint_value(i, row[i])
         csv_list.append(map)
 
-json.dump({"batch": csv_list}, sys.stdout, indent="\t")
+if flag_indent:
+    json.dump({"batch": csv_list}, sys.stdout, indent="\t")
+else:
+    json.dump({"batch": csv_list}, sys.stdout)
