@@ -1,4 +1,7 @@
 #!/usr/bin/env rest_toml_json
+[arg.id]
+type = "int"
+
 [http]
 # todos/{id}
 endpoint = "todos/#d!arg/id"

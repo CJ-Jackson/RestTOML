@@ -161,9 +161,9 @@ class CsvData():
         if not self.hint:
             return str(value)
         match self.hint[pos]:
-            case "str" | "string" | {"type": "str"} | {"type": "string"}:
+            case "str" | "string" | {"type": "str" | "string"}:
                 return str(value)
-            case "int" | "integer" | {"type": "int"} | {"type": "integer"}:
+            case "int" | "integer" | {"type": "int" | "integer"}:
                 return int(value)
             case "float" | {"type": "float"}:
                 return float(value)

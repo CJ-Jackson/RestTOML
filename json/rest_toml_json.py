@@ -46,7 +46,7 @@ flag_pipe = args.pipe
 flag_args = args.arg
 
 
-def process_flag_args() -> dict:
+def process_flag_args(data_type: dict) -> dict:
     arg_dict = {}
     if not flag_args:
         return arg_dict
@@ -55,16 +55,28 @@ def process_flag_args() -> dict:
         if len(arg) == 2:
             name = arg[0]
             value = arg[1]
-            if name.endswith(":int"):
-                name = name.removesuffix(":int")
-                value = int(value)
-            if name.endswith(":float"):
-                name = name.removesuffix(":int")
-                value = float(value)
-            if name.endswith(":bool"):
-                name = arg[0].removesuffix(":bool")
-                value = bool(int(arg[1]))
-            arg_dict[name.split(":", maxsplit=2)[0]] = value
+            value_type = data_type.get(name, {})
+            match value_type:
+                case {"type": "str" | "string"}:
+                    value = str(value)
+                case {"type": "int" | "integer"}:
+                    value = int(value)
+                case {"type": "float"}:
+                    value = float(value)
+                case {"type": "bool"}:
+                    value = bool(int(value))
+                case _:
+                    value = str(value)
+            match arg_dict.get(name, None):
+                case None:
+                    arg_dict[name] = value
+                case list():
+                    arg_list = list(arg_dict[name])
+                    arg_list.append(value)
+                    arg_dict[name] = arg_list
+                case _:
+                    arg_list = [arg_dict[name], value]
+                    arg_dict[name] = arg_list
     return arg_dict
 
 
@@ -191,6 +203,7 @@ class TomlDataError(Exception): pass
 class TomlData():
     http: HttpData
     pipe: dict[str, PipeData] | None = None
+    arg: dict = field(default_factory=dict)
 
     @classmethod
     def create(cls, data: dict) -> Self:
@@ -206,7 +219,8 @@ class TomlData():
 
         return cls(
             http=http,
-            pipe=pipe
+            pipe=pipe,
+            arg=data.get("arg", {})
         )
 
 
@@ -283,7 +297,7 @@ class Piper:
         return user_data
 
 
-arg_dict = process_flag_args()
+arg_dict = process_flag_args(toml_data.arg)
 piper = Piper({"arg": arg_dict})
 if toml_data.pipe:
     all_pipe_data = {}
