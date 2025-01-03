@@ -1,0 +1,13 @@
+#!/usr/bin/env rest_toml_xml
+
+[http]
+endpoint = "/data"
+method = "post"
+
+[http.payload.PetsloverInformation]
+'@xmlns:xsd' = 'http://www.w3.org/2001/XMLSchema'
+'@xmlns:xsi' = 'http://www.w3.org/2001/XMLSchema-instance'
+
+name = "CJ Jackson"
+email = "not-cj-jackson@example.com"
+address = "Jersey"

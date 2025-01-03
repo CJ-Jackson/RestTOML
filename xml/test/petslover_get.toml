@@ -1,0 +1,8 @@
+#!/usr/bin/env rest_toml_xml
+
+[arg.id]
+type = "int"
+
+[http]
+# petslover/{id}
+endpoint = "data/#d!arg/id"
