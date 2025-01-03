@@ -96,8 +96,8 @@ def arg_pass() -> list:
 
 
 adapter_data = {
-    "url": "http://127.0.0.1:8080",
-    "headers": {"Content-Type": "application/xml"},
+    "url": "http://127.0.0.1:18080",
+    "headers": {"Content-Type": "application/xml; charset=utf-8"},
     "verify": False,
 }
 
@@ -344,6 +344,13 @@ def process_endpoint_arg() -> str:
     endpoint = piper.process(endpoint_split)
     return "/".join(str(v) for v in endpoint).rstrip("/")
 
+payload = ""
+if toml_data.http.method not in ["GET", "HEAD"]:
+    if type(toml_data.http.payload) is str:
+        payload = xmltodict.parse(toml_data.http.payload)
+        payload = xmltodict.unparse(piper.process(payload), pretty=True)
+    else:
+        payload = xmltodict.unparse(piper.process(toml_data.http.payload), pretty=True)
 
 req = requests.Request(
     method=toml_data.http.method,
@@ -351,22 +358,12 @@ req = requests.Request(
     headers=piper.process(toml_data.http.headers) | adapter_data.headers,
     params=piper.process(toml_data.http.params),
     cookies=piper.process(toml_data.http.cookies),
+    data=payload
 )
 
 session = requests.Session()
 
 prepared_req = req.prepare()
-
-payload = ""
-if toml_data.http.method not in ["GET", "HEAD"]:
-    if type(toml_data.http.payload) is str:
-        xml_payload = xmltodict.parse(toml_data.http.payload)
-        prepared_req.body = xmltodict.unparse(piper.process(xml_payload), pretty=True)
-    else:
-        prepared_req.body = xmltodict.unparse(piper.process(toml_data.http.payload), pretty=True)
-    payload = prepared_req.body
-
-print(payload)
 
 if not adapter_data.verify:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

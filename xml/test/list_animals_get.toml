@@ -1,0 +1,6 @@
+#!/usr/bin/env rest_toml_xml
+
+[http]
+# petslover/{id}
+endpoint = "list-animals"
+

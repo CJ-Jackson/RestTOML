@@ -1,0 +1,10 @@
+#!/usr/bin/env rest_toml_xml
+
+[http]
+endpoint = "/post-animal"
+method = "post"
+
+[http.payload.SingleAnimal.Animal]
+'@Id' = 11
+Name = "Linx"
+Description = "Strange Cat"

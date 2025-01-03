@@ -39,8 +39,8 @@ flag_adapter = args.adapter
 flag_show_request = args.show_request
 
 adapter_data = {
-    "url": "https://jsonplaceholder.typicode.com/",
-    "headers": {"Content-type": "application/json; charset=UTF-8"},
+    "url": "http://127.0.0.1:18080",
+    "headers": {"Content-Type": "application/json; charset=UTF-8"},
     "verify": True,
 }
 
@@ -277,24 +277,24 @@ for pos in range(len(batch)):
 
     piper = Piper({"batch": batch[pos]})
 
+    payload = ""
+    if toml_data.http.method not in ["GET", "HEAD"]:
+        if type(toml_data.http.payload) is str:
+            payload = json.loads(toml_data.http.payload)
+            payload = json.dumps(piper.process(payload))
+        else:
+            payload = json.dumps(piper.process(toml_data.http.payload))
+
     req = requests.Request(
         method=toml_data.http.method,
         url=adapter_data.url.rstrip("/") + "/" + process_endpoint_arg(piper),
         headers=piper.process(toml_data.http.headers) | adapter_data.headers,
         params=piper.process(toml_data.http.params),
         cookies=piper.process(toml_data.http.cookies),
+        data=payload
     )
 
     prepared_req = req.prepare()
-
-    payload = "{}"
-    if toml_data.http.method not in ["GET", "HEAD"]:
-        if type(toml_data.http.payload) is str:
-            json_payload = json.loads(toml_data.http.payload)
-            prepared_req.body = json.dumps(piper.process(json_payload))
-        else:
-            prepared_req.body = json.dumps(piper.process(toml_data.http.payload))
-        payload = prepared_req.body
 
     if not adapter_data.verify:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
