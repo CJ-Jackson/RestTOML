@@ -64,7 +64,8 @@ def process_flag_args(data_type: dict) -> dict:
                 case {"type": "float"}:
                     value = float(value)
                 case {"type": "bool"}:
-                    value = bool(int(value))
+                    value = str(value).lower()
+                    value = value in ["1", "true", "yes"]
                 case _:
                     value = str(value)
             match arg_dict.get(name, None):
