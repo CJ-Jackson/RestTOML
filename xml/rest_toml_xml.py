@@ -352,6 +352,10 @@ if toml_data.http.method not in ["GET", "HEAD"]:
     else:
         payload = xmltodict.unparse(piper.process(toml_data.http.payload), pretty=True)
 
+payload_parsed = {}
+if payload:
+    payload_parsed = xmltodict.parse(payload)
+
 req = requests.Request(
     method=toml_data.http.method,
     url=adapter_data.url.rstrip("/") + "/" + process_endpoint_arg(),
@@ -383,13 +387,18 @@ if flag_pipe:
             for key, morsel in simple_cookie.items():
                 cookies_[key] = morsel.value
     json_output = {
-        "edition": "json",
-        "request": {"headers": dict(res.request.headers), "payload": json.loads(payload)},
+        "edition": "xml",
+        "request": {
+            "headers": dict(res.request.headers),
+            "payload": payload_parsed,
+            "payload_original": payload
+            },
         "url": res.request.url,
         "status": res.status_code,
         "headers": dict(res.headers),
         "cookies": cookies_,
-        "body": res.text,
+        "body": xmltodict.parse(res.text),
+        "body_original": res.text,
         "elapsed": f"{res.elapsed}"
     }
     if flag_indent:
@@ -398,11 +407,13 @@ if flag_pipe:
         json.dump(json_output, sys.stdout)
     exit(0)
 
+console = Console()
+
 if flag_show_request:
     print("-- Request Headers --")
     pprint(dict(res.request.headers), expand_all=True)
     print("-- Request Payload --")
-    print_json(payload)
+    console.print(Syntax(payload, "xml", background_color="black"))
 
 print("-- Response --")
 print(f"URL: {res.request.url}")
@@ -413,12 +424,11 @@ if flag_show_header:
     pprint(dict(res.headers), expand_all=True)
 print("-- Response Body --")
 
-console = Console()
+
 if not res.text:
     exit(0)
 try:
     xml_res = xmltodict.parse(res.text)
-    syntax = Syntax(xmltodict.unparse(xml_res, pretty=True), "xml", background_color="black")
-    console.print(syntax)
+    console.print(Syntax(xmltodict.unparse(xml_res, pretty=True), "xml", background_color="black"))
 except ExpatError:
     exit(0)

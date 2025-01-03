@@ -278,6 +278,8 @@ except subprocess.CalledProcessError as e:
 
 session = requests.Session()
 
+console = Console()
+
 for pos in range(len(batch)):
 
     piper = Piper({"batch": batch[pos]})
@@ -316,7 +318,7 @@ for pos in range(len(batch)):
         print("-- Request Headers --")
         pprint(dict(res.request.headers), expand_all=True)
         print("-- Request Payload --")
-        print_json(payload)
+        console.print(Syntax(payload, "xml", background_color="black"))
 
     print("-- Response --")
     print(f"URL: {res.request.url}")
@@ -324,12 +326,10 @@ for pos in range(len(batch)):
     print(f"Elapsed: {res.elapsed}")
     print("-- Response Body --")
 
-    console = Console()
     if not res.text:
         continue
     try:
         xml_res = xmltodict.parse(res.text)
-        syntax = Syntax(xmltodict.unparse(xml_res, pretty=True), "xml", background_color="black")
-        console.print(syntax)
+        console.print(Syntax(xmltodict.unparse(xml_res, pretty=True), "xml", background_color="black"))
     except ExpatError:
         continue
