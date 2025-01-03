@@ -64,7 +64,7 @@ def process_flag_args(data_type: dict) -> dict:
                 case {"type": "float"}:
                     value = float(value)
                 case {"type": "bool"}:
-                    value = str(value).lower()
+                    value = str(value).strip().lower()
                     value = value in ["1", "true", "yes"]
                 case _:
                     value = str(value)

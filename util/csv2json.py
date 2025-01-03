@@ -168,7 +168,7 @@ class CsvData():
             case "float" | {"type": "float"}:
                 return float(value)
             case "bool" | {"type": "bool"}:
-                value = str(value).lower()
+                value = str(value).strip().lower()
                 return value in ["1", "true", "yes"]
             case {"cmd": _}:
                 return handle_hint_command(self.hint[pos], value)
