@@ -379,9 +379,9 @@ try:
 except requests.ConnectionError as e:
     error_and_exit("REQUESTS_CONNECTION_ERROR", e.__str__())
 
-def parse_payload() -> str:
+def parse_payload() -> dict | list:
     if not payload:
-        return ""
+        return {}
     return json.loads(payload)
 
 
@@ -397,6 +397,7 @@ if flag_pipe:
         "edition": "json",
         "request": {"headers": dict(res.request.headers), "payload": parse_payload()},
         "url": res.request.url,
+        "method": res.request.method,
         "status": res.status_code,
         "headers": dict(res.headers),
         "cookies": cookies_,

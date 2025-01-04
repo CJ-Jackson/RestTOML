@@ -408,6 +408,7 @@ if flag_pipe:
             "payload_original": payload
             },
         "url": res.request.url,
+        "method": res.request.method,
         "status": res.status_code,
         "headers": dict(res.headers),
         "cookies": cookies_,
