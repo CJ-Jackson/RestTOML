@@ -379,6 +379,12 @@ try:
 except requests.ConnectionError as e:
     error_and_exit("REQUESTS_CONNECTION_ERROR", e.__str__())
 
+def parse_payload() -> str:
+    if not payload:
+        return ""
+    return json.loads(payload)
+
+
 if flag_pipe:
     cookies_ = {}
     if "set-cookie" in dict(res.headers):
@@ -389,7 +395,7 @@ if flag_pipe:
                 cookies_[key] = morsel.value
     json_output = {
         "edition": "json",
-        "request": {"headers": dict(res.request.headers), "payload": json.loads(payload)},
+        "request": {"headers": dict(res.request.headers), "payload": parse_payload()},
         "url": res.request.url,
         "status": res.status_code,
         "headers": dict(res.headers),
