@@ -20,7 +20,6 @@ from typing import Self, MutableMapping, Any, Generator
 import requests
 import urllib3
 import xmltodict
-from rich import print_json
 from rich.console import Console
 from rich.pretty import pprint
 from rich.syntax import Syntax
