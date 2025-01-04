@@ -12,7 +12,7 @@ import sys
 import tomllib
 import zoneinfo
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, Generator, Any
 
 
 def error_and_exit(error_name: str, error_message: str):
@@ -184,39 +184,49 @@ try:
 except CsvDataError as e:
     error_and_exit("CSV_DATA_ERROR", e.__str__())
 
-csv_header: list | None = None
-csv_list = []
 
-first = True
-with open(toml_data.file) as csvfile:
-    csv_reader = csv.reader(
-        csvfile,
-        dialect=toml_data.dialect,
-        delimiter=toml_data.delimiter,
-        quotechar=toml_data.quotechar
-    )
-    for row in csv_reader:
-        row = list(row)
-        if first:
-            toml_data.hint_len_check(len(row))
-            first = False
-            if toml_data.use_header:
-                csv_header = row
-                continue
-            elif toml_data.map:
-                csv_header = list(toml_data.map)
-        map = {}
-        if csv_header:
-            if len(csv_header) != len(row):
-                error_and_exit("CSV_HEADER_LENGHT", "Length of CSV is not equal to row")
-            for i in range(len(csv_header)):
-                map[csv_header[i]] = toml_data.hint_value(i, row[i])
-        else:
-            for i in range(len(row)):
-                map[str(i)] = toml_data.hint_value(i, row[i])
-        csv_list.append(map)
+def get_rows_from_csv() -> Generator[list, list]:
+    with open(toml_data.file) as csvfile:
+        csv_reader = csv.reader(
+            csvfile,
+            dialect=toml_data.dialect,
+            delimiter=toml_data.delimiter,
+            quotechar=toml_data.quotechar
+        )
+        for row in csv_reader:
+            yield list(row)
+
+
+rows = list(get_rows_from_csv())
+
+csv_header: list | None = None
+if toml_data.use_header:
+    csv_header = rows[0]
+    rows = rows[1:]
+elif toml_data.map:
+    csv_header = list(toml_data.map)
+    if len(csv_header) != len(rows[0]):
+        error_and_exit(
+            "CSV_HEADER_LENGHT",
+            "Length of CSV is not equal to row"
+        )
+else:
+    csv_header = list(range(len(rows)))
+
+toml_data.hint_len_check(len(csv_header))
+
+
+def handle_csv_column(row: list) -> Generator[tuple[str, Any], dict[str, Any]]:
+    for pos in range(len(row)):
+        yield str(csv_header[pos]), toml_data.hint_value(pos, row[pos])
+
+
+def handle_csv_rows(rows: list) -> Generator[dict[str, Any], list[dict]]:
+    for row in rows:
+        yield dict(handle_csv_column(row))
+
 
 if flag_indent:
-    json.dump({"batch": csv_list}, sys.stdout, indent="\t")
+    json.dump({"batch": list(handle_csv_rows(rows))}, sys.stdout, indent="\t")
 else:
-    json.dump({"batch": csv_list}, sys.stdout)
+    json.dump({"batch": list(handle_csv_rows(rows))}, sys.stdout)
