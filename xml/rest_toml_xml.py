@@ -386,6 +386,12 @@ try:
 except requests.ConnectionError as e:
     error_and_exit("REQUESTS_CONNECTION_ERROR", e.__str__())
 
+def pretty_print_xml(xml: str) -> str:
+    try:
+        return xmltodict.unparse(xmltodict.parse(xml), pretty=True)
+    except (ValueError, ExpatError):
+        return ""
+
 if flag_pipe:
     cookies_ = {}
     if "set-cookie" in dict(res.headers):
@@ -406,7 +412,7 @@ if flag_pipe:
         "headers": dict(res.headers),
         "cookies": cookies_,
         "body": xmltodict.parse(res.text),
-        "body_original": res.text,
+        "body_original": pretty_print_xml(res.text),
         "elapsed": f"{res.elapsed}"
     }
     if flag_indent:
@@ -435,8 +441,4 @@ print("-- Response Body --")
 
 if not res.text:
     exit(0)
-try:
-    xml_res = xmltodict.parse(res.text)
-    console.print(Syntax(xmltodict.unparse(xml_res, pretty=True), "xml", background_color="black"))
-except ExpatError:
-    exit(0)
+console.print(Syntax(pretty_print_xml(res.text), "xml", background_color="black"))
