@@ -1,0 +1,11 @@
+#!/usr/bin/env rest_toml_json
+
+[arg.id]
+type = "int"
+
+[http]
+endpoint = "/delete-animal"
+method = "delete"
+
+[http.payload]
+Id = "#d!arg/id"

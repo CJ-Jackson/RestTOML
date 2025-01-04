@@ -1,0 +1,16 @@
+#!/usr/bin/env rest_toml_json
+
+[arg.urlid]
+type = "int"
+
+[arg.id]
+type = "int"
+
+[http]
+endpoint = "/patch-animal/#d!arg/urlid"
+method = "patch"
+
+[http.payload.Animal]
+Id = "#d!arg/id"
+Name = "#d!arg/name"
+Description = "#d!arg/desc"
