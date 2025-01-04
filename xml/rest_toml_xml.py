@@ -88,11 +88,10 @@ def process_flag_args(data_type: dict) -> dict:
     return arg_dict
 
 
-def arg_pass() -> list:
-    args = []
+def arg_pass() -> Generator[str, list]:
     for arg in flag_args:
-        args += ["--arg", str(arg)]
-    return args
+        yield "--arg"
+        yield str(arg)
 
 
 adapter_data = {
@@ -320,7 +319,7 @@ piper = Piper({"arg": arg_dict})
 if toml_data.pipe:
     all_pipe_data = {}
     try:
-        pass_args = arg_pass()
+        pass_args = list(arg_pass())
         for key, pipe in toml_data.pipe.items():
             extra = []
             if pipe.pass_pipe_flag:
