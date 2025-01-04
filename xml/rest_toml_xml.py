@@ -16,7 +16,7 @@ import tomllib
 from http import cookies
 from dataclasses import dataclass, field
 from xml.parsers.expat import ExpatError
-from typing import Self, MutableMapping, Any
+from typing import Self, MutableMapping, Any, Generator
 
 import requests
 import urllib3
@@ -251,17 +251,16 @@ except PipeDataError as e:
     error_and_exit("PIPE_DATA_ERROR", e.__str__())
 
 
-def _list_to_dict(v: list) -> dict:
-    d = {"_": tuple(v)}
+def _list_to_dict(v: list) -> Generator[tuple[str, Any], dict]:
+    yield "_", tuple(v)
     for i in range(len(v)):
-        d[str(i)] = v[i]
-    return d
+        yield str(i), v[i]
 
 
-def _flatten_dict_gen(d, parent_key, sep):
+def _flatten_dict_gen(d, parent_key, sep) -> Generator[tuple[str, Any], dict]:
     for k, v in d.items():
         if type(v) is list:
-            v = _list_to_dict(v)
+            v = dict(_list_to_dict(v))
         new_key = parent_key + sep + k if parent_key else k
         if isinstance(v, MutableMapping):
             yield from flatten_dict(v, new_key, sep=sep).items()
@@ -269,7 +268,7 @@ def _flatten_dict_gen(d, parent_key, sep):
             yield new_key, v
 
 
-def flatten_dict(d: MutableMapping, parent_key: str = '', sep: str = '/'):
+def flatten_dict(d: MutableMapping, parent_key: str = '', sep: str = '/') -> dict:
     return dict(_flatten_dict_gen(d, parent_key, sep))
 
 
@@ -282,36 +281,38 @@ class Piper:
     def process(self, user_data: dict | list) -> dict | list | None:
         try:
             if type(user_data) is dict:
-                return self.__process_dict(user_data.copy())
+                return dict(self.__process_dict(user_data))
             elif type(user_data) is list:
-                return self.__process_list(user_data.copy())
+                return list(self.__process_list(user_data))
         except KeyError as ex:
             error_and_exit(
                 "PIPER_KEY_ERROR",
                 f"'#d!{ex.__str__().strip("'")}' not found"
             )
 
-    def __process_list(self, user_data: list) -> list:
+    def __process_list(self, user_data: list) -> Generator[Any, list]:
         for i in range(len(user_data)):
             match user_data[i]:
                 case str() if str(user_data[i]).startswith("#d!"):
-                    user_data[i] = self.__data[str(user_data[i])[3:].strip('/')]
+                    yield self.__data[str(user_data[i])[3:].strip('/')]
                 case dict():
-                    user_data[i] = self.__process_dict(dict(user_data[i]))
+                    yield dict(self.__process_dict(user_data[i]))
                 case list():
-                    user_data[i] = self.__process_list(list(user_data[i]))
-        return user_data
+                    yield list(self.__process_list(user_data[i]))
+                case _:
+                    yield user_data[i]
 
-    def __process_dict(self, user_data: dict) -> dict:
+    def __process_dict(self, user_data: dict) -> Generator[tuple[str, Any], dict]:
         for key, value in user_data.items():
             match value:
                 case str() if str(value).startswith("#d!"):
-                    user_data[key] = self.__data[str(value)[3:].strip('/')]
+                    yield key, self.__data[str(value)[3:].strip('/')]
                 case dict():
-                    user_data[key] = self.__process_dict(dict(value))
+                    yield key, dict(self.__process_dict(value))
                 case list():
-                    user_data[key] = self.__process_list(list(value))
-        return user_data
+                    yield key, list(self.__process_list(value))
+                case _:
+                    yield key, value
 
 
 arg_dict = process_flag_args(toml_data.arg)
