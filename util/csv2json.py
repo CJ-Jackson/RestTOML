@@ -12,7 +12,7 @@ import sys
 import tomllib
 import zoneinfo
 from dataclasses import dataclass
-from typing import Self, Generator, Any
+from typing import Self, Iterator, Any
 
 
 def error_and_exit(error_name: str, error_message: str):
@@ -185,7 +185,7 @@ except CsvDataError as e:
     error_and_exit("CSV_DATA_ERROR", e.__str__())
 
 
-def get_rows_from_csv() -> Generator[list, list]:
+def get_rows_from_csv() -> Iterator[list]:
     with open(toml_data.file) as csvfile:
         csv_reader = csv.reader(
             csvfile,
@@ -211,17 +211,17 @@ elif toml_data.map:
             "Length of CSV is not equal to row"
         )
 else:
-    csv_header = list(range(len(rows)))
+    csv_header = list(range(len(rows[0])))
 
 toml_data.hint_len_check(len(csv_header))
 
 
-def handle_csv_column(row: list) -> Generator[tuple[str, Any], dict[str, Any]]:
+def handle_csv_column(row: list) -> Iterator[tuple[str, Any]]:
     for pos in range(len(row)):
         yield str(csv_header[pos]), toml_data.hint_value(pos, row[pos])
 
 
-def handle_csv_rows(rows: list) -> Generator[dict[str, Any], list[dict]]:
+def handle_csv_rows(rows: list) -> Iterator[dict[str, Any]]:
     for row in rows:
         yield dict(handle_csv_column(row))
 

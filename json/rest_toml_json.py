@@ -14,7 +14,7 @@ import sys
 import tomllib
 from http import cookies
 from dataclasses import dataclass, field
-from typing import Self, MutableMapping, Any, Generator
+from typing import Self, MutableMapping, Any, Iterator
 
 import requests
 import urllib3
@@ -83,7 +83,7 @@ def process_flag_args(data_type: dict) -> dict:
     return arg_dict
 
 
-def arg_pass() -> Generator[str, list]:
+def arg_pass() -> Iterator[str]:
     for arg in flag_args:
         yield "--arg"
         yield str(arg)
@@ -244,14 +244,14 @@ except PipeDataError as e:
     error_and_exit("PIPE_DATA_ERROR", e.__str__())
 
 
-def _list_to_dict(v: list) -> Generator[tuple[str, Any], dict]:
+def _list_to_dict(v: list) -> Iterator[tuple[str, Any]]:
     yield "_", tuple(v)
     for i in range(len(v)):
         yield str(i), v[i]
 
 
 
-def _flatten_dict_gen(d, parent_key, sep) -> Generator[tuple[str, Any], dict]:
+def _flatten_dict_gen(d, parent_key, sep) -> Iterator[tuple[str, Any]]:
     for k, v in d.items():
         if type(v) is list:
             v = dict(_list_to_dict(v))
@@ -284,7 +284,7 @@ class Piper:
                 f"'#d!{ex.__str__().strip("'")}' not found"
             )
 
-    def __process_list(self, user_data: list) -> Generator[Any, list]:
+    def __process_list(self, user_data: list) -> Iterator[Any]:
         for i in range(len(user_data)):
             match user_data[i]:
                 case str() if str(user_data[i]).startswith("#d!"):
@@ -296,7 +296,7 @@ class Piper:
                 case _:
                     yield user_data[i]
 
-    def __process_dict(self, user_data: dict) -> Generator[tuple[str, Any], dict]:
+    def __process_dict(self, user_data: dict) -> Iterator[tuple[str, Any]]:
         for key, value in user_data.items():
             match value:
                 case str() if str(value).startswith("#d!"):
