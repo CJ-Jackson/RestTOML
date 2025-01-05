@@ -42,6 +42,7 @@ arg_toml = args.toml
 flag_adapter = args.adapter
 flag_show_request = args.show_request
 
+# https://github.com/CJ-Jackson/AnimalApiTestServer
 adapter_data = {
     "url": "http://127.0.0.1:18080",
     "headers": {"Content-Type": "application/xml; charset=utf-8"},
