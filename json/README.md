@@ -33,6 +33,8 @@ To build the first request
 endpoint = "hello/world"
 ```
 
+Make it execute run `./request.toml`
+
 ## TOML Docs
 
 ### rest_toml_json
