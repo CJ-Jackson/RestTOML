@@ -31,7 +31,7 @@ def error_and_exit(error_name: str, error_message: str):
     exit(100)
 
 
-parser = argparse.ArgumentParser(description="Process HTTP Rest request for JSON")
+parser = argparse.ArgumentParser(description="Process HTTP Rest request for XML")
 
 parser.add_argument("toml")
 parser.add_argument("--adapter")

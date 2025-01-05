@@ -87,6 +87,25 @@ value = "test"
 title = "#d!pipe/name/body/title"
 ```
 
+#### cli `--help`
+```
+usage: rest_toml_json [-h] [--adapter ADAPTER] [--show-request] [--show-header] [--pipe] [--indent] [--arg ARG] toml
+
+Process HTTP Rest request for JSON
+
+positional arguments:
+  toml
+
+options:
+  -h, --help         show this help message and exit
+  --adapter ADAPTER
+  --show-request
+  --show-header
+  --pipe
+  --indent
+  --arg ARG
+```
+
 ### rest_toml_json_batch
 
 ```toml
@@ -126,4 +145,19 @@ ACookie = "yum yum"
 value = "test"
 # get a piece of data from batch row (can also be use with params, headers and cookies)
 title = "#d!batch/title"
+```
+
+#### cli `--help`
+```
+usage: rest_toml_json_batch [-h] [--adapter ADAPTER] [--show-request] toml
+
+Process Batch HTTP Rest request for JSON
+
+positional arguments:
+  toml
+
+options:
+  -h, --help         show this help message and exit
+  --adapter ADAPTER
+  --show-request
 ```
