@@ -28,7 +28,7 @@ See [document](xml/README.md)
 *  pipe2doc
 *  toml2json
 
-See [document](json/README.md)
+See [document](util/README.md)
 
 ## Tested with
 
