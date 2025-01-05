@@ -95,7 +95,7 @@ title = "#d!pipe/name/body/title"
 # Mandatory
 [batch]
 # It works with anything that return json. Mandatory
-# Recommened with csv2json and toml2json
+# Recommended with csv2json and toml2json
 script = "./other_request.toml"
 # argument to pass to script defaults to []
 arg = []
