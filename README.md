@@ -15,8 +15,8 @@ A suite of Python script to faciltate Rest API testing.
 See [document](json/README.md)
 
 ### RestTOML for XML
-*  rest_toml_json
-*  rest_toml_json_batch
+*  rest_toml_xml
+*  rest_toml_xml_batch
 
 See [document](json/README.md)
 
