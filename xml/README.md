@@ -1,4 +1,4 @@
-# RestTOML for JSON
+# RestTOML for XML
 
 ## How to use it
 
