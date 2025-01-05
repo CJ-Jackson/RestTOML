@@ -6,6 +6,9 @@ A suite of Python script to faciltate Rest API testing.
 *  UV https://docs.astral.sh/uv/
    *  Used for inline dependency metadata
 
+## Installation
+Place the `bin` folder into `PATH` environment variable.
+
 ## Script
 
 ### RestTOML for JSON
