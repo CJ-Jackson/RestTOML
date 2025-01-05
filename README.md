@@ -21,7 +21,7 @@ See [document](json/README.md)
 *  rest_toml_xml
 *  rest_toml_xml_batch
 
-See [document](json/README.md)
+See [document](xml/README.md)
 
 ### Util
 *  csv2json
