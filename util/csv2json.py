@@ -108,7 +108,10 @@ class DateTimeFormatter():
 
 def handle_date_time_cmd(data: dict, value: str) -> str:
     try:
-        return DateTimeFormatter.create(data).process(value)
+        if type(data.get("__cache", None)) is not DateTimeFormatter:
+            data["__cache"] = DateTimeFormatter.create(data)
+        dtf: DateTimeFormatter = data["__cache"]
+        return dtf.process(value)
     except DateTimeFormatter as e:
         error_and_exit("DATE_TIME_FORMATTER", e.__str__())
     return value
