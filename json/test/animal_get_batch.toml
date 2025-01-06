@@ -4,5 +4,5 @@
 script = "./animal_get_batch.csv.toml"
 
 [http]
-# animal/{id}
-endpoint = "animal/#d!batch/id"
+# animal/get/{id}
+endpoint = "animal/get/#d!batch/id"

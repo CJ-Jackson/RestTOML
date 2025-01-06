@@ -1,5 +1,5 @@
 #!/usr/bin/env rest_toml_xml
 
 [http]
-endpoint = "list-animals"
+endpoint = "animal/list"
 

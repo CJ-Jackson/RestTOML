@@ -4,7 +4,8 @@
 type = "int"
 
 [http]
-endpoint = "/patch-animal/#d!arg/id/0"
+# animal/update/{id}
+endpoint = "animal/update/#d!arg/id/0"
 method = "patch"
 
 [http.payload.SingleAnimal.Animal]

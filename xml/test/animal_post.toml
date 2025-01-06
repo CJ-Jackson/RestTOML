@@ -4,7 +4,7 @@
 type = "int"
 
 [http]
-endpoint = "/post-animal"
+endpoint = "animal/post"
 method = "post"
 
 [http.payload.SingleAnimal.Animal]

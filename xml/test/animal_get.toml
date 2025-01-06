@@ -4,5 +4,5 @@
 type = "int"
 
 [http]
-# animal/{id}
-endpoint = "animal/#d!arg/id"
+# animal/get/{id}
+endpoint = "animal/get/#d!arg/id"

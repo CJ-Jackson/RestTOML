@@ -4,7 +4,7 @@
 type = "int"
 
 [http]
-endpoint = "/delete-animal"
+endpoint = "animal/delete"
 method = "delete"
 
 [http.payload.DeleteAnimalData]
