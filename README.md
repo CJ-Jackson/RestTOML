@@ -35,4 +35,4 @@ See [document](util/README.md)
 https://github.com/CJ-Jackson/AnimalApiTestServer
 
 ## TODO
-*  Implemented `RestTOML for GraphQL`
+*  Implement `RestTOML for GraphQL`
