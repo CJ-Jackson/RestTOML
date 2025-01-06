@@ -12,7 +12,8 @@ import sys
 import tomllib
 import zoneinfo
 from dataclasses import dataclass
-from typing import Self, Iterator, Any
+from typing import Self, Any
+from collections.abc import Iterator
 
 
 def error_and_exit(error_name: str, error_message: str):

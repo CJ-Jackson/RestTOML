@@ -13,7 +13,8 @@ import subprocess
 import sys
 import tomllib
 from dataclasses import dataclass, field
-from typing import Self, MutableMapping, Any, Iterator
+from typing import Self, Any
+from collections.abc import Iterator, MutableMapping
 
 import requests
 import urllib3
