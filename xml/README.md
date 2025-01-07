@@ -63,7 +63,7 @@ pass_arg = false
 # Mandatory
 [http]
 # Endpoint of the url. Mandatory, do not add query use [http.params]
-# `hello/world/{id}` (`#d!` can be terminated with `\\` or by another `#d!`)
+# `hello/world/{id}` (`#d!` can be terminated with `//` or by another `#d!`)
 endpoint = "hello/world/#d!arg/id"
 # Http Method, default to "get"
 method = "get"
