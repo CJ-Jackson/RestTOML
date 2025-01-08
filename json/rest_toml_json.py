@@ -92,7 +92,10 @@ def arg_pass() -> Iterator[str]:
 # https://github.com/CJ-Jackson/AnimalApiTestServer
 adapter_data = {
     "url": "http://127.0.0.1:18080",
-    "headers": {"Content-Type": "application/json; charset=UTF-8"},
+    "headers": {
+        "Content-Type": "application/json; charset=UTF-8",
+        "Accept": "application/json"
+        },
     "verify": True,
 }
 

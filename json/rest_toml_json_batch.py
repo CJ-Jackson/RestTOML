@@ -42,7 +42,10 @@ flag_show_request = args.show_request
 # https://github.com/CJ-Jackson/AnimalApiTestServer
 adapter_data = {
     "url": "http://127.0.0.1:18080",
-    "headers": {"Content-Type": "application/json; charset=UTF-8"},
+    "headers": {
+        "Content-Type": "application/json; charset=UTF-8",
+        "Accept": "application/json"
+        },
     "verify": True,
 }
 
