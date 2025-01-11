@@ -4,8 +4,6 @@
 type = "int"
 
 [http]
-endpoint = "animal/delete"
+# animal/delete/{id}
+endpoint = "animal/delete/#d!arg/id"
 method = "delete"
-
-[http.payload.DeleteAnimalData]
-Id = "#d!arg/id"
