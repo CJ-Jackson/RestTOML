@@ -354,7 +354,7 @@ def process_endpoint_arg() -> str:
 
 
 payload = ""
-if toml_data.http.method not in ["GET", "HEAD", "CONNECT", "TRACE"] and toml_data.http.payload:
+if toml_data.http.method not in ["GET", "HEAD", "CONNECT", "TRACE", "OPTIONS"] and toml_data.http.payload:
     if type(toml_data.http.payload) is str:
         payload = json.loads(toml_data.http.payload)
         payload = json.dumps(piper.process(payload))
