@@ -294,7 +294,7 @@ for pos in range(len(batch)):
     piper = Piper({"batch": batch[pos]})
 
     payload = ""
-    if toml_data.http.method not in ["GET", "HEAD"] and toml_data.http.payload:
+    if toml_data.http.method not in ["GET", "HEAD", "CONNECT", "TRACE"] and toml_data.http.payload:
         if type(toml_data.http.payload) is str:
             payload = xmltodict.parse(toml_data.http.payload)
             payload = xmltodict.unparse(piper.process(payload), pretty=True)
